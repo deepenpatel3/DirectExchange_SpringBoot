@@ -1,6 +1,9 @@
 package edu.sjsu.cmpe275.DirectExchange.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+
+
 import java.io.Serializable;
 
 @Entity
@@ -12,30 +15,105 @@ public class BankAccount implements Serializable{
 //	private long id;
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long accountNumber;
     
     @Column(name="name")
+    @NotNull(message = "Name may not be empty")
     private String name;
     
-    @Column(name="country")
+    @Column(name="country", nullable = false)
     private String country;
     
-    @Column(name="ownerName")
+    @Column(name="ownerName", nullable = false)
     private String ownerName;
     
-    @ManyToOne
+
+	@ManyToOne
     private User owner;
     
-    @Column(name="ownerAddress")
+    @Column(name="ownerAddress", nullable = false)
     private String ownerAddress;
     
-    @Column(name="primaryCurrency")
+    @Column(name="primaryCurrency", nullable = false)
     private String primaryCurrency;
     
-    @Column(name="sending")
-    private boolean sending;
+    @Column(name="sending", nullable = false)
+    private Boolean sending;
     
-    @Column(name="receiving")
-    private boolean receiving;
+    @Column(name="receiving", nullable = false)
+    private Boolean receiving;
+    
+    
+    public long getAccountNumber() {
+		return accountNumber;
+	}
+
+	public void setAccountNumber(long accountNumber) {
+		this.accountNumber = accountNumber;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	public String getOwnerName() {
+		return ownerName;
+	}
+
+	public void setOwnerName(String ownerName) {
+		this.ownerName = ownerName;
+	}
+
+	public User getOwner() {
+		return owner;
+	}
+
+	public void setOwner(User owner) {
+		this.owner = owner;
+	}
+
+	public String getOwnerAddress() {
+		return ownerAddress;
+	}
+
+	public void setOwnerAddress(String ownerAddress) {
+		this.ownerAddress = ownerAddress;
+	}
+
+	public String getPrimaryCurrency() {
+		return primaryCurrency;
+	}
+
+	public void setPrimaryCurrency(String primaryCurrency) {
+		this.primaryCurrency = primaryCurrency;
+	}
+
+	public Boolean isSending() {
+		return sending;
+	}
+
+	public void setSending(Boolean sending) {
+		this.sending = sending;
+	}
+
+	public Boolean isReceiving() {
+		return receiving;
+	}
+
+	public void setReceiving(Boolean receiving) {
+		this.receiving = receiving;
+	}
+
 }
