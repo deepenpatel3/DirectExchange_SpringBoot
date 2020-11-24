@@ -1,7 +1,6 @@
 package edu.sjsu.cmpe275.DirectExchange.model;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 
 
 import java.io.Serializable;
@@ -17,8 +16,7 @@ public class BankAccount implements Serializable{
 	@Id
 	private long accountNumber;
     
-    @Column(name="name")
-    @NotNull(message = "Name may not be empty")
+    @Column(name="name", nullable = false)
     private String name;
     
     @Column(name="country", nullable = false)

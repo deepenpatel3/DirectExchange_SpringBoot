@@ -70,7 +70,7 @@ public class BankAccountController {
 		System.out.println("get BankAccount -> id: " + accountNumber);
 		Optional<BankAccount> bankAccount = bankAccountService.getBankAccount(accountNumber);
 		if (bankAccount.isPresent()) {
-			return new ResponseEntity<>(bankAccount, HttpStatus.OK);
+			return new ResponseEntity<>(bankAccount.get(), HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>("BankAccount not found", HttpStatus.NOT_FOUND);
 		}
