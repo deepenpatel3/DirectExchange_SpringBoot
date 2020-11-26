@@ -12,4 +12,5 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
     List<Offer> findOfferBySourceCurrency(String sourceCurrency);
 
     List<Offer> findOfferByUserId(long id);
+
 }
