@@ -41,7 +41,7 @@ public class OfferController {
     public ResponseEntity<?> postOffer(@RequestBody Offer offer) {
         System.out.println("posting an offer -> " + offer.getId());
         offerService.addOffer(offer);
-        return new ResponseEntity<>("Offer Created", HttpStatus.OK);
+        return new ResponseEntity<>("Offer Posted", HttpStatus.OK);
     }
 
     @DeleteMapping(value = "/offer/{offerId}")
@@ -65,23 +65,11 @@ public class OfferController {
         return new ResponseEntity<>(offers, HttpStatus.OK);
     }
 
-    @RequestMapping("/offer")
-    public ResponseEntity<?> getAllOffers() {
+    @RequestMapping("/offer/all/{id}")
+    public ResponseEntity<?> getAllOffersExceptSelf(@PathVariable long id) {
         System.out.println("get all offers");
-        List<Offer> offers = offerService.getAllOffers();
+        Set<Offer> offers = offerService.getAllOffers(id);
         return new ResponseEntity<>(offers, HttpStatus.OK);
-    }
-
-    @PostMapping(value = "/offer/changeOffer", consumes = "application/json")
-    public ResponseEntity<?> changeOfferAmount(@RequestBody Map<String, Object> payload) {
-        System.out.println("changing an offer amount -> " + payload);
-        long offerId = new Long(payload.get("offerId").toString()).longValue();
-        int amount = (int) payload.get("amount");
-
-        Optional<Offer> offer = offerService.getOfferById(offerId);
-        offer.get().setAmountToRemit(amount);
-        offerService.addOffer(offer.get());
-        return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
     @PostMapping(value = "/offer/counterOffer")
@@ -119,7 +107,7 @@ public class OfferController {
 
     }
 
-    @PostMapping(value = "/offer/counterOffer/changeAmount/{mainOfferId}")
+    @PostMapping(value = "/offer/changeAmount/{mainOfferId}")
     public ResponseEntity<?> changeAmountAfterAccept(@PathVariable long mainOfferId) {
         System.out.println("Changing Main Offer to counter offer Amount -> " + mainOfferId);
         Set<CounterOffer> counterOffers = counterOfferService.getAllCounterOffersOfAnOffer(mainOfferId);
