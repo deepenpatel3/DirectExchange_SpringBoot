@@ -36,4 +36,8 @@ public class OfferService {
         return offerRepository.findOfferByUserId(id);
     }
 
+    public void deleteOffer(long id) {
+        offerRepository.deleteById(id);
+    }
+
 }

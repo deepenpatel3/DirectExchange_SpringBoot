@@ -34,7 +34,7 @@ public class Offer implements Serializable {
 	@Column(nullable = false)
 	private float exchangeRate;
 
-	@JsonFormat(pattern = "dd-MM-yyyy")
+	@JsonFormat(pattern = "yyyy-MM-dd")
 	@Column(nullable = false)
 	private Date expirationDate;
 
@@ -42,10 +42,10 @@ public class Offer implements Serializable {
 	private int amountToRemit;
 
 	@Column
-	private boolean allowCounterOffer = true;
+	private boolean allowCounterOffer;
 
 	@Column
-	private boolean allowSplitExchange = true;
+	private boolean allowSplitExchange;
 
 	@Column
 	private String status = "open";

@@ -11,7 +11,7 @@ export default class BrowseOffer extends Component {
     }
 
     async componentDidMount() {
-        axios.get("http://localhost:8080/offer")
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/offer`)
             .then(response => {
                 console.log(response.data);
                 this.setState({
@@ -21,7 +21,6 @@ export default class BrowseOffer extends Component {
     }
 
     postOffer = (args) => {
-        console.log("waah " + args["sourceCurrency"]);
         let data = {
             amountToRemit: document.getElementById("counterOfferAmount").value,
             userId: 1,
@@ -33,9 +32,10 @@ export default class BrowseOffer extends Component {
             sourceCurrency: args.sourceCurrency,
             destinationCurrency: args.destinationCurrency
         }
-        axios.post("http://localhost:8080/offer/counterOffer", data)
+        axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/counterOffer`, data)
             .then(response => {
-                console.log(response);
+                alert(response.data);
+                window.location.assign("/browseOffer");
             })
     }
     render() {

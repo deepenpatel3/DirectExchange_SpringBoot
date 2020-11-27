@@ -13,7 +13,7 @@ export default class MyOffers extends Component {
     }
 
     async componentDidMount() {
-        axios.get("http://localhost:8080/offer/" + 1)
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/offer/` + 1)
             .then(response => {
                 console.log(response.data);
                 this.setState({
@@ -24,7 +24,7 @@ export default class MyOffers extends Component {
 
     acceptCounterOffer = (counterOfferId) => {
         console.log("accepting counter off");
-        axios.post("http://localhost:8080/offer/counterOffer/split/accept/" + counterOfferId)
+        axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/counterOffer/split/accept/` + counterOfferId)
             .then(response => {
                 alert(response.data);
                 window.location.assign("/myOffers");
@@ -33,15 +33,16 @@ export default class MyOffers extends Component {
 
     rejectCounterOffer = (counterOfferId) => {
         console.log("deleting counter off");
-        axios.delete("http://localhost:8080/offer/counterOffer/" + counterOfferId)
+        axios.delete(`${process.env.REACT_APP_BACKEND_URL}/offer/counterOffer/` + counterOfferId)
             .then(response => {
                 alert(response.data);
                 window.location.assign("/myOffers");
             })
     }
 
-    postOffer = (event) => {
+    postOffer = async (event) => {
         event.preventDefault();
+
         let data = {
             amountToRemit: document.getElementById("amount").value,
             sourceCurrency: document.getElementById("sourceCurrency").value,
@@ -50,11 +51,24 @@ export default class MyOffers extends Component {
             destinationCurrency: document.getElementById("destinationCurrency").value,
             destinationCountry: document.getElementById("destinationCountry").value,
             expirationDate: document.getElementById("expirationDate").value,
-            allowSplitExchange: document.getElementById("allowSplitExchange").value,
-            allowCounterOffer: document.getElementById("allowCounterOffer").value,
+            allowSplitExchange: document.getElementById("splitOffers").checked,
+            allowCounterOffer: document.getElementById("counterOffers").checked,
             userId: 1 //localStorage.getItem("id");
         }
-        console.log("data ", data);
+        console.log(data);
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/`, data)
+            .then(response => {
+                alert(response.data);
+                window.location.assign("/myOffers");
+            })
+    }
+
+    deleteOffer = async (offerId) => {
+        await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/offer/` + offerId)
+            .then(response => {
+                alert(response.data);
+                window.location.assign("/myOffers");
+            })
     }
 
     render() {
@@ -115,13 +129,13 @@ export default class MyOffers extends Component {
                                                 </div>
                                                 <div class="form-group">
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="splitOffers" />
+                                                        <input class="form-check-input" type="checkbox" id="splitOffers" defaultChecked={true} />
                                                         <label class="form-check-label" for="splitOffers">
                                                             Split offers
                                                         </label>
                                                     </div>
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="counterOffers" />
+                                                        <input class="form-check-input" type="checkbox" id="counterOffers" defaultChecked={true} />
                                                         <label class="form-check-label" for="counterOffers">
                                                             Counter Offers
                                                         </label>
@@ -161,9 +175,10 @@ export default class MyOffers extends Component {
                                                     <path fill-rule="evenodd" d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
                                                 </svg>}
                                         </span>
-
-                                        {offer.allowCounterOffer ? <button class="btn btn-primary float-right" data-toggle="modal" data-target={"#counterOfferModal" + offer.id} >Counter Offers</button> : null}
-
+                                        <div className="float-right">
+                                            {offer.allowCounterOffer ? <button class="btn btn-primary " data-toggle="modal" data-target={"#counterOfferModal" + offer.id} >Counter Offers</button> : null}
+                                            <button className="btn-danger" onClick={() => this.deleteOffer(offer.id)}>Delete</button>
+                                        </div>
                                         <div class="modal fade" id={"counterOfferModal" + offer.id} tabindex="-1" role="dialog" aria-labelledby={"counterOfferModalLabel" + offer.id} aria-hidden="true">
                                             <div class="modal-dialog" role="document">
                                                 <div class="modal-content">
