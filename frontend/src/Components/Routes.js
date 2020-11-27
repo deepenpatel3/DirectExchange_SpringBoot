@@ -18,7 +18,7 @@ class Main extends Component {
                 <Route exact path="/verify/:id" component={VerifyEmail} />
                 {/* protected routes */}
                 <ProtectedRoute path="/home" component={Dashboard} />
-                <ProtectedRoute path="/browserOffer" component={BrowseOffer} />
+                <ProtectedRoute path="/browseOffer" component={BrowseOffer} />
                 <ProtectedRoute path="/myOffers" component={MyOffers} />
             </div>
         )
