@@ -2,6 +2,7 @@ package edu.sjsu.cmpe275.DirectExchange.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,8 @@ public class OfferService {
     @Autowired
     OfferRepository offerRepository;
 
-    public List<Offer> getAllOffers() {
-        return offerRepository.findAll();
+    public Set<Offer> getAllOffers(long id) {
+        return offerRepository.findOfferNotSelf(id);
     }
 
     public Optional<Offer> getOfferById(long id) {

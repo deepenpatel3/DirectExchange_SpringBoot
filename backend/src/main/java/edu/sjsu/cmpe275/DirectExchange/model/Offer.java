@@ -56,6 +56,10 @@ public class Offer implements Serializable {
 	@Column
 	private boolean accepted = false;
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "matching_offer_id", nullable = true)
+	private Offer matchingOffer;
+	
 	@JsonIgnoreProperties({ "mainOffer" })
 	@OneToMany(mappedBy = "mainOffer")
 	private Set<CounterOffer> counterOffers;
@@ -178,6 +182,14 @@ public class Offer implements Serializable {
 
 	public void setCounterOffers(Set<CounterOffer> counterOffers) {
 		this.counterOffers = counterOffers;
+	}
+
+	public Offer getMatchingOffer() {
+		return matchingOffer;
+	}
+
+	public void setMatchingOffer(Offer matchingOffer) {
+		this.matchingOffer = matchingOffer;
 	}
 
 }
