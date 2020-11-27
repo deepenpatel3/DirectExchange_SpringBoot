@@ -109,11 +109,29 @@ public class OfferController {
         }
         System.out.println("sum " + sum + " amount to remit " + amountToRemit);
         if (sum > amountToRemit * 0.9 && sum < amountToRemit * 1.1) {
+            long offerId = counterOffer.getMainOffer().getId();
+            Optional<Offer> offer = offerService.getOfferById(offerId);
+            offer.get().setAccepted(true);
             return new ResponseEntity<>("Offer fullfilled, please complete the transaction", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Counter offer accepted", HttpStatus.OK);
         }
 
+    }
+
+    @PostMapping(value = "/offer/counterOffer/changeAmount/{mainOfferId}")
+    public ResponseEntity<?> changeAmountAfterAccept(@PathVariable long mainOfferId) {
+        System.out.println("Changing Main Offer to counter offer Amount -> " + mainOfferId);
+        Set<CounterOffer> counterOffers = counterOfferService.getAllCounterOffersOfAnOffer(mainOfferId);
+        Optional<Offer> offer = offerService.getOfferById(mainOfferId);
+        int sum = 0;
+        for (CounterOffer oneCounterOffer : counterOffers) {
+            if (oneCounterOffer.getStatus().equalsIgnoreCase("accepted"))
+                sum += oneCounterOffer.getAmountToRemit();
+        }
+        System.out.println("sum " + sum);
+        offer.get().setAmountToRemit(sum);
+        return new ResponseEntity<>("Amount to remit for Offer updated, please complete the transaction", HttpStatus.OK);
     }
 
     @RequestMapping(value = "/offer/counterOffer/{id}", method = RequestMethod.DELETE)
