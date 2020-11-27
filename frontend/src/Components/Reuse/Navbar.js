@@ -3,7 +3,7 @@ import { Menu , Layout} from 'antd';
 import { UserOutlined} from '@ant-design/icons';
 import {logout} from '../../helpers/authHelper'
 const { Header } = Layout;
-const { SubMenu  } = Menu;
+const { SubMenu } = Menu;
 
 class Navbar extends Component {
 

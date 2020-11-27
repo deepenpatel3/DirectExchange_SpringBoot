@@ -3,6 +3,9 @@ package edu.sjsu.cmpe275.DirectExchange.model;
 import java.util.*;
 import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 
 @Entity
@@ -29,7 +32,7 @@ public class Offer implements Serializable {
 	private String destinationCountry;
 
 	@Column(nullable = false)
-	private int exchangeRate;
+	private float exchangeRate;
 
 	@JsonFormat(pattern = "dd-MM-yyyy")
 	@Column(nullable = false)
@@ -47,14 +50,15 @@ public class Offer implements Serializable {
 	@Column
 	private String status = "open";
 
-	@Column()
-	private boolean sent;
+	@Column
+	private boolean sent = false;
 
-	@Column()
+	@Column
 	private boolean accepted = false;
 
-	// @OneToMany(mappedBy = "id" )
-	// private Set<Offer> counterOffers;
+	@JsonIgnoreProperties({ "mainOffer" })
+	@OneToMany(mappedBy = "mainOffer")
+	private Set<CounterOffer> counterOffers;
 
 	public long getId() {
 		return id;
@@ -104,11 +108,11 @@ public class Offer implements Serializable {
 		this.destinationCountry = destinationCountry;
 	}
 
-	public int getExchangeRate() {
+	public float getExchangeRate() {
 		return exchangeRate;
 	}
 
-	public void setExchangeRate(int exchangeRate) {
+	public void setExchangeRate(float exchangeRate) {
 		this.exchangeRate = exchangeRate;
 	}
 
@@ -158,6 +162,22 @@ public class Offer implements Serializable {
 
 	public void setSent(boolean sent) {
 		this.sent = sent;
+	}
+
+	public boolean isAccepted() {
+		return accepted;
+	}
+
+	public void setAccepted(boolean accepted) {
+		this.accepted = accepted;
+	}
+
+	public Set<CounterOffer> getCounterOffers() {
+		return counterOffers;
+	}
+
+	public void setCounterOffers(Set<CounterOffer> counterOffers) {
+		this.counterOffers = counterOffers;
 	}
 
 }
