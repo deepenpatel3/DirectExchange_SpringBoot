@@ -11,69 +11,69 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class User implements Serializable {
 
     @Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
-    
-    @Column(name="username", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
+    @Column(name = "username", nullable = false, updatable = false)
     private String username;
-    
-    @Column(name="nickname", nullable = false, updatable = false)
+
+    @Column(name = "nickname", nullable = false, updatable = false)
     private String nickname;
-    
-    @Column(name="password")
+
+    @Column(name = "password")
     private String password;
-    
-    @Column(name="reputation")
+
+    @Column(name = "reputation")
     private int reputation;
-    
-	@OneToMany(mappedBy = "owner" )
+
+    @OneToMany(mappedBy = "owner")
     private Set<BankAccount> bankAccounts;
 
-	public long getId() {
-		return id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public String getUsername() {
-		return username;
-	}
+    public String getUsername() {
+        return username;
+    }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-	public String getNickname() {
-		return nickname;
-	}
+    public String getNickname() {
+        return nickname;
+    }
 
-	public void setNickname(String nickname) {
-		this.nickname = nickname;
-	}
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public int getReputation() {
-		return reputation;
-	}
+    public int getReputation() {
+        return reputation;
+    }
 
-	public void setReputation(int reputation) {
-		this.reputation = reputation;
-	}
+    public void setReputation(int reputation) {
+        this.reputation = reputation;
+    }
 
-	public Set<BankAccount> getBankAccounts() {
-		return bankAccounts;
-	}
+    public Set<BankAccount> getBankAccounts() {
+        return bankAccounts;
+    }
 
-	public void setBankAccounts(Set<BankAccount> bankAccounts) {
-		this.bankAccounts = bankAccounts;
-	}
+    public void setBankAccounts(Set<BankAccount> bankAccounts) {
+        this.bankAccounts = bankAccounts;
+    }
 }
