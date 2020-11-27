@@ -1,5 +1,6 @@
 package edu.sjsu.cmpe275.DirectExchange.service;
 
+import java.util.List;
 import java.util.Optional;
 
 //import javax.transaction.Transactional;
@@ -19,6 +20,13 @@ public class UserService {
 	public Optional<User> getUser(long id){
 		return UserRepository.findById(id);
 	}
+	
+	public User getUserByUID(String uid){
+		List<User> users =  UserRepository.findUserByUid(uid);
+		return users.size() > 0 ? users.get(0): null;
+	}
+	
+	
 	
 	public User addUser(User user){
 		return UserRepository.save(user);

@@ -1,25 +1,25 @@
 import React, { Component } from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Switch, Redirect, BrowserRouter } from 'react-router-dom';
 import Dashboard from './Dashboard';
-<<<<<<< HEAD
 import Login from './Login';
-=======
+import VerifyEmail from './VerifyEmail';
+import { ProtectedRoute } from './ProtectedRoutes'
 import BrowseOffer from "./Offer/BrowseOffer";
-import MyOffers from './Offer/MyOffers';
+import MyOffers from "./Offer/MyOffers";
 
->>>>>>> 0160144db938cc4e2a29cb3274d0d51e5080a32f
 class Main extends Component {
     render() {
         return (
             <div>
-<<<<<<< HEAD
-                <Route path="/home" component={Dashboard} />
-                <Route path="/" component={Login} />
-=======
-                <Route exact path="/" component={Dashboard} />
-                <Route exact path="/browseOffer" component={BrowseOffer} />
-                <Route exact path="/myOffers" component={MyOffers} />
->>>>>>> 0160144db938cc4e2a29cb3274d0d51e5080a32f
+                <Route exact path="/">
+                    <Redirect to="/login" />
+                </Route>
+                <Route exact path="/login" component={Login} />
+                <Route exact path="/verify/:id" component={VerifyEmail} />
+                {/* protected routes */}
+                <ProtectedRoute path="/home" component={Dashboard} />
+                <ProtectedRoute path="/browserOffer" component={BrowseOffer} />
+                <ProtectedRoute path="/myOffers" component={MyOffers} />
             </div>
         )
     }

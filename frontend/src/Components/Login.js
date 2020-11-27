@@ -2,26 +2,20 @@ import React, { Component } from 'react';
 // import Navbar from './Reuse/Navbar';
 import firebase from 'firebase';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+import { Layout, Card, message } from 'antd';
+import axios from "axios";
+import { login } from '../helpers/authHelper'
 
-// Configure Firebase.
-const config = {
-    apiKey: "AIzaSyD7nLgAxbHd6pimha4gvFkIwsqt-Fqck50",
-    authDomain: "directexchange-47010.firebaseapp.com",
-    databaseURL: "https://directexchange-47010.firebaseio.com",
-    projectId: "directexchange-47010",
-    storageBucket: "directexchange-47010.appspot.com",
-    messagingSenderId: "484190305866",
-    appId: "1:484190305866:web:e021a1dbb7e3838ea0b0b3"
-};
-firebase.initializeApp(config);
-
+var uniqid = require('uniqid');
+const { Header, Content, Footer } = Layout;
 
 
 class Login extends Component {
 
     // The component's Local state.
     state = {
-        isSignedIn: false // Local signed-in state.
+        isSignedIn: false,// Local signed-in state.
+        emailVerified: false
     };
 
     // Configure FirebaseUI.
@@ -29,7 +23,7 @@ class Login extends Component {
         // Popup signin flow rather than redirect flow.
         signInFlow: 'popup',
         // Redirect to /signedIn after sign in is successful. Alternatively you can provide a callbacks.signInSuccess function.
-        signInSuccessUrl: '/home',
+        //signInSuccessUrl: '/home',
         // We will display Google and Facebook as auth providers.
         signInOptions: [
             firebase.auth.GoogleAuthProvider.PROVIDER_ID,
@@ -38,17 +32,70 @@ class Login extends Component {
         ],
         callbacks: {
             // Avoid redirects after sign-in.
-            signInSuccessWithAuthResult: () => false
+            // signInSuccessWithAuthResult: async (_authResult, _redirectUrl) => {
+            //     await this.navigateRedirect();
+            // }
+            signInSuccessWithAuthResult: async (_authResult, _redirectUrl) => {
+                if (_authResult.additionalUserInfo.isNewUser) {
+                    await this.createNewUser();
+                }
+            }
         }
     };
 
+    userVerified = async () => {
+        console.log("userverified called");
+        try {
+            let uid = firebase.auth().currentUser.uid;
+            let user = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/uid/${uid}`);
+
+            if (user.data.verified) {
+                login(user.data);
+                window.location.href = 'home'
+            }
+        }
+        catch (e) {
+            console.log(e.message);
+        }
+    }
+    createNewUser = async () => {
+        console.log("create new user called");
+        let currentUser = firebase.auth().currentUser;
+        let data = {
+            uid: currentUser.uid,
+            username: currentUser.email,
+            nickname: uniqid('direct-exchange-')
+        }
+        try {
+            let newUser = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/user`, data);
+            await this.sendVerificationMail(newUser.data.id);
+        }
+        catch (e) {
+            message.error(e.message);
+        }
+        return false;
+    }
+
+    sendVerificationMail = async (id) => {
+        console.log("send verification mail called");
+        var actionCodeSettings = {
+            url: 'http://localhost:3000/verify/' + id,
+        };
+        await firebase.auth().currentUser.sendEmailVerification(actionCodeSettings)
+            .then(function () {
+                // Verification email sent.
+            });
+    }
     // Listen to the Firebase Auth state and set the local state.
     componentDidMount() {
-        
+
         this.unregisterAuthObserver = firebase.auth().onAuthStateChanged(
-            
-            
-            (user) => {
+
+            async (user) => {
+                console.log(user);
+                if (user) {
+                    await this.userVerified();
+                }
                 this.setState({ isSignedIn: !!user })
             }
         );
@@ -61,22 +108,30 @@ class Login extends Component {
     render() {
         if (!this.state.isSignedIn) {
             return (
-                <div>
-                    <h1>DirectExchange</h1>
-                    <p>Please sign-in:</p>
+                <Card title="Login/Signup" style={{ width: 400, margin: "auto", marginTop: "100px", verticalAlign: "middle" }}>
                     <StyledFirebaseAuth uiConfig={this.uiConfig} firebaseAuth={
                         firebase.auth()
                     } />
-                </div>
+                </Card>
             );
         }
-        return (
-            <div>
-                <h1>My App</h1>
-                <p>Welcome {firebase.auth().currentUser.displayName}! You are now signed-in!</p>
-                <button onClick={() => firebase.auth().signOut()}>Sign-out</button>
-            </div>
-        );
+        else {
+
+            if (!this.state.emailVerified)
+                return (
+                    <Card title="Verify your email" style={{ width: 400, margin: "auto", marginTop: "100px", verticalAlign: "middle" }}>
+                        An email has been sent to { firebase.auth().currentUser.email}.
+                    </Card>
+                );
+        }
+
+        // return (
+        //     <div>
+        //         <h1>My App</h1>
+        //         <p>Welcome {firebase.auth().currentUser.displayName}! You are now signed-in!</p>
+        //         <button onClick={() => firebase.auth().signOut()}>Sign-out</button>
+        //     </div>
+        // );
 
     }
 }

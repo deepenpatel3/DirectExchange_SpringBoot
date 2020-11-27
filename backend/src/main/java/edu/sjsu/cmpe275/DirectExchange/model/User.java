@@ -14,10 +14,16 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "username", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
+    private String uid;
+
+    @Column(name = "verified")
+    private boolean verified;
+
+    @Column(name = "username", nullable = false, updatable = false, unique = true)
     private String username;
 
-    @Column(name = "nickname", nullable = false, updatable = false)
+    @Column(name = "nickname", nullable = false)
     private String nickname;
 
     @Column(name = "password")
@@ -35,6 +41,22 @@ public class User implements Serializable {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 
     public String getUsername() {

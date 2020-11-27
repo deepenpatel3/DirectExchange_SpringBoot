@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,8 +41,14 @@ public class OfferController {
     public ResponseEntity<?> postOffer(@RequestBody Offer offer) {
         System.out.println("posting an offer -> " + offer.getId());
         offerService.addOffer(offer);
-        return new ResponseEntity<>(true, HttpStatus.OK);
+        return new ResponseEntity<>("Offer Created", HttpStatus.OK);
+    }
 
+    @DeleteMapping(value = "/offer/{offerId}")
+    public ResponseEntity<?> deleteOffer(@PathVariable long offerId) {
+        System.out.println("deleting an offer -> " + offerId);
+        offerService.deleteOffer(offerId);
+        return new ResponseEntity<>("Offer deleted", HttpStatus.OK);
     }
 
     @RequestMapping("/offer/sourceCurrency/{sourceCurrency}")
