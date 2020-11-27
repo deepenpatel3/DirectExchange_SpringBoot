@@ -6,8 +6,6 @@ import VerifyEmail from './VerifyEmail';
 import { ProtectedRoute } from './ProtectedRoutes'
 import BrowseOffer from "./Offer/BrowseOffer";
 import MyOffers from "./Offer/MyOffers";
-import Offer from "./Offer/Offer";
-
 
 class Main extends Component {
     render() {
@@ -22,7 +20,6 @@ class Main extends Component {
                 <ProtectedRoute path="/home" component={Dashboard} />
                 <ProtectedRoute path="/browseOffer" component={BrowseOffer} />
                 <ProtectedRoute path="/myOffers" component={MyOffers} />
-                <ProtectedRoute path="/offer" component={Offer} />
             </div>
         )
     }
