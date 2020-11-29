@@ -44,7 +44,8 @@ class Login extends Component {
     };
 
     userVerified = async () => {
-        console.log("userverified called");
+
+        console.log("userverified called" + process.env.REACT_APP_BACKEND_URL );
         try {
             let uid = firebase.auth().currentUser.uid;
             let user = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/uid/${uid}`);

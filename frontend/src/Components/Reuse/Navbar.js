@@ -19,6 +19,7 @@ class Navbar extends Component {
     <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['2']}>
     <SubMenu key="SubMenu" style={{float:"right"}} icon={<UserOutlined />} title="Profile">
         <Menu.Item key="setting:1"><Link to="/myOffers">My Offers</Link></Menu.Item>
+        <Menu.Item key="setting:1"><Link to="/accounts">My Bank Accounts</Link></Menu.Item>
         <Menu.Item key="setting:2" onClick={()=>this.logoutUser()}>Logout</Menu.Item>
       {/* <Menu.ItemGroup title="Item 2">
         <Menu.Item key="setting:3">Option 3</Menu.Item>
