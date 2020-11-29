@@ -1,12 +1,21 @@
 package edu.sjsu.cmpe275.DirectExchange.model;
 
-import java.util.*;
-import javax.persistence.*;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.io.Serializable;
+import java.util.Date;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "Offer")
@@ -16,8 +25,8 @@ public class Offer implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	@Column(nullable = false)
-	private long userId;
+	@ManyToOne
+	private User user;
 
 	@Column(nullable = false)
 	private String sourceCurrency;
@@ -35,17 +44,17 @@ public class Offer implements Serializable {
 	private float exchangeRate;
 
 	@JsonFormat(pattern = "yyyy-MM-dd")
-	@Column(nullable = false)
+	@Column
 	private Date expirationDate;
 
 	@Column(nullable = false)
-	private int amountToRemit;
+	private float amountToRemit;
 
 	@Column
-	private boolean allowCounterOffer;
+	private boolean allowCounterOffer = false;
 
 	@Column
-	private boolean allowSplitExchange;
+	private boolean allowSplitExchange = false;
 
 	@Column
 	private String status = "open";
@@ -56,13 +65,40 @@ public class Offer implements Serializable {
 	@Column
 	private boolean accepted = false;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "matching_offer_id", nullable = true)
-	private Offer matchingOffer;
+	@Column
+	private float remainigBalance = amountToRemit;
+
+	// @JsonIgnoreProperties({ "counterOffers", "matchingOffers" })
+	// @ManyToMany(cascade = CascadeType.PERSIST)
+	// @JoinTable(name = "matchingOffer", joinColumns = { @JoinColumn(name =
+	// "offer_id") }, inverseJoinColumns = {
+	// @JoinColumn(name = "matching_offer_id") })
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@OneToMany
+	private Set<Offer> matchingOffers;
+
+	@Column(nullable = false)
+	private boolean counterOfferOrNot = false;
+
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@OneToMany(mappedBy = "parentOffer")
+	private Set<Offer> counterOffers;
+
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@ManyToOne()
+	private Offer parentOffer;
 	
-	@JsonIgnoreProperties({ "mainOffer" })
-	@OneToMany(mappedBy = "mainOffer")
-	private Set<CounterOffer> counterOffers;
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@OneToOne()
+	private Offer holdOffer;
+
+	public Offer getHoldOffer() {
+		return holdOffer;
+	}
+
+	public void setHoldOffer(Offer holdOffer) {
+		this.holdOffer = holdOffer;
+	}
 
 	public long getId() {
 		return id;
@@ -70,14 +106,6 @@ public class Offer implements Serializable {
 
 	public void setId(long id) {
 		this.id = id;
-	}
-
-	public long getUserId() {
-		return userId;
-	}
-
-	public void setUserId(long userId) {
-		this.userId = userId;
 	}
 
 	public String getSourceCurrency() {
@@ -128,11 +156,11 @@ public class Offer implements Serializable {
 		this.expirationDate = expirationDate;
 	}
 
-	public int getAmountToRemit() {
+	public float getAmountToRemit() {
 		return amountToRemit;
 	}
 
-	public void setAmountToRemit(int amountToRemit) {
+	public void setAmountToRemit(float amountToRemit) {
 		this.amountToRemit = amountToRemit;
 	}
 
@@ -176,20 +204,52 @@ public class Offer implements Serializable {
 		this.accepted = accepted;
 	}
 
-	public Set<CounterOffer> getCounterOffers() {
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+	public Set<Offer> getMatchingOffers() {
+		return matchingOffers;
+	}
+
+	public void setMatchingOffers(Set<Offer> matchingOffers) {
+		this.matchingOffers = matchingOffers;
+	}
+
+	public Set<Offer> getCounterOffers() {
 		return counterOffers;
 	}
 
-	public void setCounterOffers(Set<CounterOffer> counterOffers) {
+	public void setCounterOffers(Set<Offer> counterOffers) {
 		this.counterOffers = counterOffers;
 	}
 
-	public Offer getMatchingOffer() {
-		return matchingOffer;
+	public float getRemainigBalance() {
+		return remainigBalance;
 	}
 
-	public void setMatchingOffer(Offer matchingOffer) {
-		this.matchingOffer = matchingOffer;
+	public void setRemainigBalance(float remainigBalance) {
+		this.remainigBalance = remainigBalance;
+	}
+
+	public boolean isCounterOfferOrNot() {
+		return counterOfferOrNot;
+	}
+
+	public void setCounterOfferOrNot(boolean counterOfferOrNot) {
+		this.counterOfferOrNot = counterOfferOrNot;
+	}
+
+	public Offer getParentOffer() {
+		return parentOffer;
+	}
+
+	public void setParentOffer(Offer parentOffer) {
+		this.parentOffer = parentOffer;
 	}
 
 }
