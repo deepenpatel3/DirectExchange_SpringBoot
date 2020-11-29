@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe275.DirectExchange.service;
 
 import java.util.Optional;
+import java.util.Set;
 
 //import javax.transaction.Transactional;
 
@@ -26,6 +27,14 @@ public class BankAccountService {
 	
 	public void deleteBankAccount(long accountNumber) {
 		bankAccountRepository.deleteById(accountNumber);
+	}
+	
+	public Set<BankAccount> getCanSend(long id, String country) {
+		return bankAccountRepository.canSend(id, country);
+	}
+	
+	public Set<BankAccount> getCanReceive(long id, String country) {
+		return bankAccountRepository.canReceive(id, country);
 	}
 	
 	
