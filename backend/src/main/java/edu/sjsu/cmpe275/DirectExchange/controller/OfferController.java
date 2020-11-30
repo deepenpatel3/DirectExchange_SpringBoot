@@ -1,10 +1,15 @@
 package edu.sjsu.cmpe275.DirectExchange.controller;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -50,6 +55,7 @@ public class OfferController {
         if(canReceive.size() == 0) {
             return new ResponseEntity<>("Create Bank Account in " + offer.getDestinationCountry()+ " with Receiving enabled to receive money.", HttpStatus.BAD_REQUEST);
         }
+        offer.setRemainigBalance(offer.getAmountToRemit());
         offerService.addOffer(offer);
         return new ResponseEntity<>("Offer Posted", HttpStatus.OK);
     }
@@ -124,51 +130,62 @@ public class OfferController {
         System.out.println("posting counter offer -> ");
         
         Set<BankAccount> canSend = bankAccountService.getCanSend(offer.getUser().getId(), offer.getSourceCountry());
-        Set<BankAccount> canReceive = bankAccountService.getCanSend(offer.getUser().getId(), offer.getDestinationCountry());
+        Set<BankAccount> canReceive = bankAccountService.getCanReceive(offer.getUser().getId(), offer.getDestinationCountry());
         if(canSend.size() == 0) {
-            return new ResponseEntity<>("Create Bank Account in" + offer.getSourceCountry()+ "with Sending enabled to deduct money.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Create Bank Account in " + offer.getSourceCountry()+ " with Sending enabled to deduct money.", HttpStatus.BAD_REQUEST);
         }
         if(canReceive.size() == 0) {
-            return new ResponseEntity<>("Create Bank Account in" + offer.getDestinationCountry()+ "with Receiving enabled to receive money.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Create Bank Account in " + offer.getDestinationCountry()+ " with Receiving enabled to receive money.", HttpStatus.BAD_REQUEST);
         }
         
         Offer mainOffer = offerService.getOfferById(mainOfferId).get();
+//        if(mainOffer.getDestinationCountry() != offer.getSourceCountry() || offer.getDestinationCountry() != mainOffer.getSourceCountry()) {
+//	    	 return new ResponseEntity<>("More than two countries are involved between two offers or both the offers are in the same direction.", HttpStatus.BAD_REQUEST);    				 
+//  	 	}
         float amount_to_remit = mainOffer.getAmountToRemit();
         float remaining_amount_to_remit = mainOffer.getRemainigBalance();
     	float counterOfferAmountToRemit = offer.getAmountToRemit();
-        Boolean canSplit = mainOffer.isAllowSplitExchange();
-        if(canSplit == true) {
-        	if(counterOfferAmountToRemit > (amount_to_remit*1.1)-remaining_amount_to_remit) {
-        		return new ResponseEntity<>("Cannot add Counter offer more than Main Offer Amount.",HttpStatus.BAD_REQUEST);
-        	}
-        }
-        else{
-        	if(counterOfferAmountToRemit < (amount_to_remit*0.9) || counterOfferAmountToRemit > (amount_to_remit*1.1)){
-        		return new ResponseEntity<>("Cannot add Counter offer more or less than Main Offer Amount range.",HttpStatus.BAD_REQUEST);
-        	}
-        }
-        offer.setParentOffer(mainOffer);
-        if(holdOfferId.isPresent()) {
-        	Offer holdOffer = offerService.getOfferById(holdOfferId.get()).get();
-        	holdOffer.setStatus("hold");
-        	offer.setHoldOffer(holdOffer);
-        	offerService.addOffer(holdOffer);
-        }
-        offerService.addOffer(offer);
-        Set<Offer> counterOffers = mainOffer.getCounterOffers();
-        counterOffers.add(offer);
-        mainOffer.setCounterOffers(counterOffers);
-        offerService.addOffer(mainOffer);
-        return new ResponseEntity<>("Offer Posted", HttpStatus.OK);
+    	if(mainOffer.isAllowCounterOffer() == true) {
+	        Boolean canSplit = mainOffer.isAllowSplitExchange();
+	        if(canSplit == true) {
+	        	if(counterOfferAmountToRemit > remaining_amount_to_remit-(amount_to_remit*0.1)) {
+	        		return new ResponseEntity<>("Cannot add Counter offer more than Main Offer Amount.",HttpStatus.BAD_REQUEST);
+	        	}
+	        }
+	        else{
+	        	if(counterOfferAmountToRemit < (amount_to_remit*0.9) || counterOfferAmountToRemit > (amount_to_remit*1.1)){
+	        		return new ResponseEntity<>("Cannot add Counter offer more or less than Main Offer Amount range.",HttpStatus.BAD_REQUEST);
+	        	}
+	        }
+	        offer.setParentOffer(mainOffer);
+	        if(holdOfferId.isPresent()) {
+	        	Offer holdOffer = offerService.getOfferById(holdOfferId.get()).get();
+	        	holdOffer.setStatus("hold");
+	        	offer.setHoldOffer(holdOffer);
+	        	offerService.addOffer(holdOffer);
+	        }
+	        long minutes = 5;
+	        long hours = 8;
+	        offer.setExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+	        offerService.addOffer(offer);
+	        Set<Offer> counterOffers = mainOffer.getCounterOffers();
+	        counterOffers.add(offer);
+	        mainOffer.setCounterOffers(counterOffers);
+	        offerService.addOffer(mainOffer);
+	        return new ResponseEntity<>("Offer Posted", HttpStatus.OK);
+    	}
+    	else {
+    		return new ResponseEntity<>("Main Offer do not accept Counter Offers.", HttpStatus.BAD_REQUEST);
+    	}
     }
 
     
-    @PostMapping(value = "/offer/matchingOffer/accept/{mainOfferId}")
+    @PostMapping(value = "/offer/matchingOffer/{mainOfferId}")
     public ResponseEntity<?> acceptMatchingOffer(@RequestBody Offer offer, @PathVariable long mainOfferId) {
         System.out.println("posting matching offer -> ");
 
         Set<BankAccount> canSend = bankAccountService.getCanSend(offer.getUser().getId(), offer.getSourceCountry());
-        Set<BankAccount> canReceive = bankAccountService.getCanSend(offer.getUser().getId(), offer.getDestinationCountry());
+        Set<BankAccount> canReceive = bankAccountService.getCanReceive(offer.getUser().getId(), offer.getDestinationCountry());
         if(canSend.size() == 0) {
             return new ResponseEntity<>("Create Bank Account in" + offer.getSourceCountry()+ "with Sending enabled to deduct money.", HttpStatus.BAD_REQUEST);
         }
@@ -194,30 +211,31 @@ public class OfferController {
         Offer parentOffer = counterOffer.getParentOffer();
         float remainingBal = parentOffer.getRemainigBalance();
         Set<Offer> matchingOffers = parentOffer.getMatchingOffers();
-
         Boolean canSplit = parentOffer.isAllowSplitExchange();
         if(canSplit == true) {
+        	
         	if(matchingOffers.size() == 1) {
-        		if((parentOffer.getAmountToRemit()*0.9) - remainingBal < counterOffer.getAmountToRemit() && (parentOffer.getAmountToRemit()*1.1) - remainingBal > counterOffer.getAmountToRemit()) {
-            		if(counterOffer.getHoldOffer() != null) {
-            			Offer oldOffer = counterOffer.getHoldOffer();
-            			counterOffer.setHoldOffer(null);
-            			offerService.deleteOffer(oldOffer.getId());
-            		}
-        			counterOffer.setAccepted(true);
-            		parentOffer.setAccepted(true);
-        			matchingOffers.add(counterOffer);
-        	        parentOffer.setMatchingOffers(matchingOffers);
-        	        parentOffer.setRemainigBalance(remainingBal - counterOffer.getAmountToRemit());
-        	        offerService.addOffer(parentOffer);
-        	        offerService.addOffer(counterOffer);
-        	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
-        		}
-        		else {
+        		if(remainingBal - (parentOffer.getAmountToRemit()*0.1) > counterOffer.getAmountToRemit() || (parentOffer.getAmountToRemit()*0.1) + remainingBal < counterOffer.getAmountToRemit()) {
         	        return new ResponseEntity<>("Offer cannot be accepted as amount not in range.", HttpStatus.BAD_REQUEST);
         		}
+        		if(counterOffer.getHoldOffer() != null) {
+        			Offer oldOffer = counterOffer.getHoldOffer();
+        			counterOffer.setHoldOffer(null);
+        			offerService.deleteOffer(oldOffer.getId());
+        		}
+    			counterOffer.setAccepted(true);
+        		parentOffer.setAccepted(true);
+    			matchingOffers.add(counterOffer);
+    	        parentOffer.setMatchingOffers(matchingOffers);
+    	        parentOffer.setRemainigBalance(remainingBal - counterOffer.getAmountToRemit());
+    	        offerService.addOffer(parentOffer);
+    	        offerService.addOffer(counterOffer);
+    	        return new ResponseEntity<>("Offer accepted1", HttpStatus.OK);
         	}
         	else {
+        		if((parentOffer.getAmountToRemit()*0.1) + remainingBal < counterOffer.getAmountToRemit()) {
+        	        return new ResponseEntity<>("Offer cannot be accepted as amount not in range.", HttpStatus.BAD_REQUEST);
+        		}
         		if(counterOffer.getHoldOffer() != null) {
         			Offer oldOffer = counterOffer.getHoldOffer();
         			counterOffer.setHoldOffer(null);
@@ -227,30 +245,31 @@ public class OfferController {
         		matchingOffers.add(counterOffer);
     	        parentOffer.setMatchingOffers(matchingOffers);
     	        parentOffer.setRemainigBalance(remainingBal - counterOffer.getAmountToRemit());
+    	        if(parentOffer.getRemainigBalance() <= parentOffer.getAmountToRemit()*0.1) {
+    	        	parentOffer.setAccepted(true);
+    	        }
     	        offerService.addOffer(parentOffer);
     	        offerService.addOffer(counterOffer);
     	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
         	}
         }
         else {
-        	if((parentOffer.getAmountToRemit()*0.9) - remainingBal < counterOffer.getAmountToRemit() && (parentOffer.getAmountToRemit()*1.1) - remainingBal > counterOffer.getAmountToRemit()) {
-        		if(counterOffer.getHoldOffer() != null) {
-        			Offer oldOffer = counterOffer.getHoldOffer();
-        			counterOffer.setHoldOffer(null);
-        			offerService.deleteOffer(oldOffer.getId());
-        		}
-        		counterOffer.setAccepted(true);
-        		parentOffer.setAccepted(true);
-    			matchingOffers.add(counterOffer);
-    	        parentOffer.setRemainigBalance(remainingBal - counterOffer.getAmountToRemit());
-    	        parentOffer.setMatchingOffers(matchingOffers);
-    	        offerService.addOffer(parentOffer);
-    	        offerService.addOffer(counterOffer);
-    	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
-    		}
-    		else {
+        	if(remainingBal - (parentOffer.getAmountToRemit()*0.1) > counterOffer.getAmountToRemit() || (parentOffer.getAmountToRemit()*0.1) + remainingBal < counterOffer.getAmountToRemit()) {
     	        return new ResponseEntity<>("Offer cannot be accepted as amount not in range.", HttpStatus.BAD_REQUEST);
     		}
+    		if(counterOffer.getHoldOffer() != null) {
+    			Offer oldOffer = counterOffer.getHoldOffer();
+    			counterOffer.setHoldOffer(null);
+    			offerService.deleteOffer(oldOffer.getId());
+    		}
+    		counterOffer.setAccepted(true);
+    		parentOffer.setAccepted(true);
+			matchingOffers.add(counterOffer);
+	        parentOffer.setRemainigBalance(remainingBal - counterOffer.getAmountToRemit());
+	        parentOffer.setMatchingOffers(matchingOffers);
+	        offerService.addOffer(parentOffer);
+	        offerService.addOffer(counterOffer);
+	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
         }
        
     }
@@ -273,38 +292,42 @@ public class OfferController {
     	 float remainingBal = mainOffer.getRemainigBalance();
     	 float remainingBalforOther = otherOffer.getRemainigBalance();
     	 
-    	 if(remainingBalforOther > remainingBal) {
+    	 if(mainOffer.getDestinationCountry() != otherOffer.getSourceCountry() || otherOffer.getDestinationCountry() != mainOffer.getSourceCountry()) {
+	    	 return new ResponseEntity<>("More than two countries involved between two offers.", HttpStatus.BAD_REQUEST);    				 
+    	 }
+    	 
+    	 if(remainingBalforOther > remainingBal*(mainOffer.getExchangeRate())) {
     		 Offer intermediate = mainOffer;
     		 mainOffer = otherOffer;
     		 otherOffer = intermediate;
-    		 
-    		 float intermediatebal = remainingBal;
-    		 remainingBal = remainingBalforOther;
-    		 remainingBalforOther = intermediatebal;
     	 }
-    	 
+    	 remainingBal = mainOffer.getRemainigBalance();
+    	 remainingBalforOther = otherOffer.getRemainigBalance();
 		 float amountToRemit = mainOffer.getAmountToRemit();
 		 Set<Offer> matchingOffers = mainOffer.getMatchingOffers();
 
     	 Boolean canSplit = mainOffer.isAllowSplitExchange();
     	 if(canSplit == true) {
     		 if(matchingOffers.size() == 1) {
-    			 if((amountToRemit*0.9)-remainingBal > otherOffer.getAmountToRemit() || (amountToRemit*1.1)-remainingBal < otherOffer.getAmountToRemit()) {
-        	    	 return new ResponseEntity<>("Offer cannot be amount not in remaining balance range", HttpStatus.BAD_REQUEST);    				 
+    			 if(remainingBal-(amountToRemit*0.1) > otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate()) || (amountToRemit*0.1)+remainingBal < otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())) {
+        	    	 return new ResponseEntity<>("Offer cannot be added as amount not in remaining balance range", HttpStatus.BAD_REQUEST);    				 
     			 }
-    			 else {
-    				 matchingOffers.add(otherOffer);
-    				 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()));
-    				 mainOffer.setAccepted(true);
-    				 otherOffer.setAccepted(true);
-    				 offerService.addOffer(otherOffer);
-    				 offerService.addOffer(mainOffer);
-    		    	 return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
-    			 }
+				 matchingOffers.add(otherOffer);
+				 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())));
+				 otherOffer.setRemainigBalance(0);
+				 mainOffer.setAccepted(true);
+				 otherOffer.setAccepted(true);
+				 offerService.addOffer(otherOffer);
+				 offerService.addOffer(mainOffer);
+		    	 return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
     		 }
     		 else {
+    			 if((amountToRemit*0.1)+remainingBal < otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())) {
+        	    	 return new ResponseEntity<>("Offer cannot be added as amount not in remaining balance range", HttpStatus.BAD_REQUEST);    				 
+    			 }
     			 matchingOffers.add(otherOffer);
-    			 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()));
+    			 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())));
+				 otherOffer.setRemainigBalance(0);
     			 otherOffer.setAccepted(true);
     			 offerService.addOffer(otherOffer);
     			 offerService.addOffer(mainOffer);
@@ -312,12 +335,13 @@ public class OfferController {
     		 }
     	 }
     	 else {
-			 if((amountToRemit*0.9) > otherOffer.getAmountToRemit() || (amountToRemit*1.1) < otherOffer.getAmountToRemit()) {
+			 if(remainingBal-(amountToRemit*0.1) > otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate()) || (amountToRemit*0.1)+remainingBal < otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())) {
     	    	 return new ResponseEntity<>("Offer cannot be amount not in remaining balance range", HttpStatus.BAD_REQUEST);    				 
 			 }
 			 else {
 				 matchingOffers.add(otherOffer);
-				 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()));
+				 mainOffer.setRemainigBalance(remainingBal-(otherOffer.getAmountToRemit()*(otherOffer.getExchangeRate())));
+				 otherOffer.setRemainigBalance(0);
 				 mainOffer.setAccepted(true);
 				 otherOffer.setAccepted(true);
 				 offerService.addOffer(otherOffer);
