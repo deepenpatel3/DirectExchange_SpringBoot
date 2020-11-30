@@ -32,6 +32,9 @@ public class User implements Serializable {
     @Column(name = "reputation")
     private int reputation;
 
+    @OneToMany(mappedBy = "user")
+    private Set<Offer> offers;
+
     @JsonIgnoreProperties({ "owner" })
     @OneToMany(mappedBy = "owner")
     private Set<BankAccount> bankAccounts;
