@@ -1,3 +1,4 @@
+
 import React, { Component } from 'react';
 import { Route, Switch, Redirect, BrowserRouter } from 'react-router-dom';
 import Dashboard from './Dashboard';
@@ -6,6 +7,7 @@ import VerifyEmail from './VerifyEmail';
 import { ProtectedRoute } from './ProtectedRoutes'
 import BrowseOffer from "./Offer/BrowseOffer";
 import MyOffers from "./Offer/MyOffers";
+import BankAccounts from './BankAccounts';
 import Offers from "./Offer/Offer";
 
 
@@ -22,6 +24,7 @@ class Main extends Component {
                 <ProtectedRoute path="/home" component={Dashboard} />
                 <ProtectedRoute path="/browseOffer" component={BrowseOffer} />
                 <ProtectedRoute path="/myOffers" component={MyOffers} />
+                <ProtectedRoute path="/accounts" component={BankAccounts} />
                 <ProtectedRoute path="/offer" component={Offers} />
             </div>
         )
@@ -29,3 +32,4 @@ class Main extends Component {
 }
 
 export default Main;
+

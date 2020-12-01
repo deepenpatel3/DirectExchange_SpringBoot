@@ -13,9 +13,9 @@ import edu.sjsu.cmpe275.DirectExchange.model.BankAccount;
 @Repository
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long>{
 	
-	@Query(value = "Select * from Bank_Account Where owner_id = :id and country = :country and sending = 1", nativeQuery = true)
+	@Query(value = "Select * from bank_account Where owner_id = :id and country = :country and sending = 1", nativeQuery = true)
     Set<BankAccount> canSend(@Param("id") long id, @Param("country") String country);
 
-	@Query(value = "Select * from Bank_Account Where owner_id = :id and country = :country and receiving = 1", nativeQuery = true)
+	@Query(value = "Select * from bank_account Where owner_id = :id and country = :country and receiving = 1", nativeQuery = true)
     Set<BankAccount> canReceive(@Param("id") long id, @Param("country") String country);
 }
