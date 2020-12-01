@@ -66,7 +66,7 @@ public class Offer implements Serializable {
 	private boolean accepted = false;
 
 	@Column
-	private float remainigBalance = amountToRemit;
+	private float remainingBalance = amountToRemit;
 
 	// @JsonIgnoreProperties({ "counterOffers", "matchingOffers" })
 	// @ManyToMany(cascade = CascadeType.PERSIST)
@@ -228,12 +228,12 @@ public class Offer implements Serializable {
 		this.counterOffers = counterOffers;
 	}
 
-	public float getRemainigBalance() {
-		return remainigBalance;
+	public float getRemainingBalance() {
+		return remainingBalance;
 	}
 
-	public void setRemainigBalance(float remainigBalance) {
-		this.remainigBalance = remainigBalance;
+	public void setRemainingBalance(float remainigBalance) {
+		this.remainingBalance = remainigBalance;
 	}
 
 	public boolean isCounterOfferOrNot() {
