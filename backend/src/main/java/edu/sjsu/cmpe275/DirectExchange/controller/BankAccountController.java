@@ -51,7 +51,6 @@ public class BankAccountController {
 			// } else {
 			// return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
 			// }
-			// System.out.println(bankAccount);
 			return new ResponseEntity<>(bankAccountService.saveBankAccount(bankAccount), HttpStatus.CREATED);
 
 		} catch (Exception e) {

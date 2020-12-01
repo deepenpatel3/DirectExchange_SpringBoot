@@ -153,8 +153,8 @@ class BankAccounts extends Component {
                 key: 'action',
                 render: (text, record) => (
                     <Space size="middle">
-                        <Button onClick={() => { this.update(text) }}><EditFilled /></Button>
-                        <Button onClick={() => {this.delete(text)}}><DeleteFilled /></Button>
+                        <Button type="primary" onClick={() => { this.update(text) }} icon={<EditFilled />} />
+                        <Button type="danger" onClick={() => {this.delete(text)}} icon={<DeleteFilled />}/>
                     </Space>
                 )
             }
@@ -293,7 +293,7 @@ class BankAccounts extends Component {
 
                             <Button type="primary" htmlType="button" onClick={this.toggleForm}>Add an account</Button>
                             <Modal
-                                title="Update Account"
+                                title="Add an Account"
                                 visible={this.state.add}
                                 onCancel={async () => await this.setState({ add: false, text: {} })}
                                 footer={[

@@ -25,7 +25,6 @@ public class BankAccount implements Serializable {
     private String ownerName;
 
     @ManyToOne
-    // @JoinColumn(name = "owner_id", nullable = false,insertable = true)
     private User owner;
 
     @Column(name = "ownerAddress", nullable = false)
