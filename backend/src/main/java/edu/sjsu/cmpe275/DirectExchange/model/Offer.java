@@ -232,8 +232,8 @@ public class Offer implements Serializable {
 		return remainingBalance;
 	}
 
-	public void setRemainingBalance(float remainigBalance) {
-		this.remainingBalance = remainigBalance;
+	public void setRemainingBalance(float remainingBalance) {
+		this.remainingBalance = remainingBalance;
 	}
 
 	public boolean isCounterOfferOrNot() {
