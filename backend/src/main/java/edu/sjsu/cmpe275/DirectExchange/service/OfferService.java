@@ -50,6 +50,10 @@ public class OfferService {
     	return null;
     }
     
+    public List<Offer> getOfferOfMatchingOffer(long id) {
+        return offerRepository.findOfferOfMatchingOffer(id);
+    }
+    
     public Offer addOffer(Offer offer) {
         return offerRepository.save(offer);
     }
