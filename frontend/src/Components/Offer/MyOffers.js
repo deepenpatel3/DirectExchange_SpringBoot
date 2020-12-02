@@ -36,7 +36,7 @@ export default class MyOffers extends Component {
     }
 
     async componentDidMount() {
-        this.getOffers();
+        await this.getOffers();
     }
 
     acceptCounterOffer = (counterOfferId) => {
@@ -67,7 +67,7 @@ export default class MyOffers extends Component {
             exchangeRate: text["exchangeRate"],
             destinationCurrency: text["destinationCurrency"],
             destinationCountry: text["destinationCountry"],
-            expirationDate: text["expirationDate"],
+            expirationDate: text["expirationDate"].format("YYYY-MM-DD"),
             allowSplitExchange: text["splitOffers"],
             allowCounterOffer: text["counterOffers"],
             user:{
@@ -115,15 +115,15 @@ export default class MyOffers extends Component {
             })
     }
 
-    getOffers() {
-        axios.get(`${process.env.REACT_APP_BACKEND_URL}/offer/` + localStorage.getItem("id"))
+    getOffers = async () => {
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
             .then(response => {
                 console.log(response.data);
                 this.setState({
                     allMyOffers: response.data
                 });
             });
-        axios.get(`${process.env.REACT_APP_BACKEND_URL}/bankAccount/` + localStorage.getItem("id"))
+            await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bankAccount/` + localStorage.getItem("id"))
             .then(async (response) => {
                 console.log("accounts ", response.data);
                 let countries = await response.data.map(bankAccount => bankAccount.country);
@@ -385,7 +385,7 @@ export default class MyOffers extends Component {
                                         },
                                     ]}
                                 >
-                                    <Input />
+                                      <DatePicker />
                                 </Form.Item>
 
                                 <Form.Item {...tailLayout} name="splitOffers" valuePropName="checked" >

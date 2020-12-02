@@ -46,7 +46,8 @@ public class OfferService {
     }
     
     public List<Offer> getAllSameMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        return offerRepository.findSameMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+        //return offerRepository.findSameMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+    	return null;
     }
     
     public List<Offer> getOfferOfMatchingOffer(long id) {
