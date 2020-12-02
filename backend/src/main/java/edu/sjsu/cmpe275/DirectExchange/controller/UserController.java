@@ -29,64 +29,59 @@ public class UserController {
 	public UserService userService;
 
 	@RequestMapping(method = RequestMethod.POST, value = "/user")
-	public ResponseEntity<?> createUser(
-			 @RequestBody User user) {
+	public ResponseEntity<?> createUser(@RequestBody User user) {
 		try {
 			System.out.println("create user -> " + user.getUid());
-			
+
 			User user_found = userService.getUserByUID(user.getUid());
-			
-			if (user_found !=null) {
+
+			if (user_found != null) {
 				return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
 			}
-			
+
 			return new ResponseEntity<>(userService.addUser(user), HttpStatus.CREATED);
-		
+
 		} catch (Exception e) {
-			
+
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
-	
-	
+
 	@RequestMapping(method = RequestMethod.POST, value = "/user/verify")
-	public ResponseEntity<?> verifyUser(
-			 @RequestBody User user) {
+	public ResponseEntity<?> verifyUser(@RequestBody User user) {
 		try {
-			
+
 			Optional<User> user_found = userService.getUser(user.getId());
-			
+
 			if (user_found.isPresent()) {
 				user_found.get().setVerified(true);
 				userService.updateUser(user.getId(), user_found.get());
 				return new ResponseEntity<>("Verified", HttpStatus.OK);
-			}
-			else {
+			} else {
 				return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
 			}
-			
+
 		} catch (Exception e) {
-			
+
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
-	
 
 	@RequestMapping(method = RequestMethod.GET, value = "/user/uid/{uid}")
-	public ResponseEntity<?> getUserByUid(
-			@PathVariable String uid) {
+	public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
+		System.out.println("get user by id called");
 		try {
 			User user_found = userService.getUserByUID(uid);
-			
+
 			if (user_found != null) {
 				return new ResponseEntity<>(user_found, HttpStatus.OK);
 			} else {
 				return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
 			}
 		} catch (Exception e) {
-			
+
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
-	
+
 }

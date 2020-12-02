@@ -26,34 +26,41 @@ public class OfferService {
     }
 
     public Set<Offer> getOffersBySourceCurrency(long id, String sourceCurrency) {
-        return offerRepository.findOfferBySourceCurrency(id,sourceCurrency);
+        return offerRepository.findOfferBySourceCurrency(id, sourceCurrency);
     }
-    
-    public List<Offer> getAllExactMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        return offerRepository.findExactMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+
+    public Set<Offer> getOffersByDestinationCurrency(long id, String destinationCurrency) {
+        return offerRepository.findOfferByDestinationCurrency(id, destinationCurrency);
     }
-    
-    public List<Offer> getAllRangeMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        return offerRepository.findRangeMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+
+    public List<Offer> getAllExactMatchingOffer(long id, float matchingAmount, String sourceCountry,
+            String destinationCountry) {
+        return offerRepository.findExactMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
     }
-    
-    public List<Offer> getAllSplitMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        return offerRepository.findSplitMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+
+    public List<Offer> getAllRangeMatchingOffer(long id, float matchingAmount, String sourceCountry,
+            String destinationCountry) {
+        return offerRepository.findRangeMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
     }
-    
-    public List<Offer> getAllOppositeMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        return offerRepository.findOppositeMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
+
+    public List<Offer> getAllSplitMatchingOffer(long id, float matchingAmount, String sourceCountry,
+            String destinationCountry) {
+        return offerRepository.findSplitMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
     }
-    
-    public List<Offer> getAllSameMatchingOffer(long id, float matchingAmount,String sourceCountry, String destinationCountry) {
-        //return offerRepository.findSameMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
-    	return null;
+
+    public List<Offer> getAllOppositeMatchingOffer(long id, float matchingAmount, String sourceCountry,
+            String destinationCountry) {
+        return offerRepository.findOppositeMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
     }
-    
+
     public List<Offer> getOfferOfMatchingOffer(long id) {
         return offerRepository.findOfferOfMatchingOffer(id);
     }
-    
+
+    public List<Offer> getAllSameMatchingOffer(long id, String sourceCountry, String destinationCountry) {
+        return offerRepository.findSameMatchingOffer(id, sourceCountry, destinationCountry);
+    }
+
     public Offer addOffer(Offer offer) {
         return offerRepository.save(offer);
     }

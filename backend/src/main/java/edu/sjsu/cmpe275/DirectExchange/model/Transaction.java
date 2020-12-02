@@ -10,50 +10,43 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "Transacation")
-public class Transaction implements Serializable{
+public class Transaction implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer" ,"mainOffer"})
-	@JoinColumn(name = "offer", nullable = false)
+	@JsonIgnoreProperties({ "matchingOffer", "counterOffers", "holdOffer", "parentOffer" })
+	@JoinColumn(name = "mainOffer", nullable = false)
 	private Offer mainOffer;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer" ,"mainOffer"})
-	@JoinColumn(name = "offer", nullable = false)
+	@JsonIgnoreProperties({ "matchingOffer", "counterOffers", "holdOffer", "parentOffer" })
+	@JoinColumn(name = "otherOffer", nullable = false)
 	private Offer otherOffer;
 
-	
 	@Column(nullable = false)
 	private Boolean paid = false;
-
 
 	public Offer getMainOffer() {
 		return mainOffer;
 	}
 
-
 	public void setMainOffer(Offer mainOffer) {
 		this.mainOffer = mainOffer;
 	}
-
 
 	public Offer getOtherOffer() {
 		return otherOffer;
 	}
 
-
 	public void setOtherOffer(Offer otherOffer) {
 		this.otherOffer = otherOffer;
 	}
 
-
 	public Boolean getPaid() {
 		return paid;
 	}
-
 
 	public void setPaid(Boolean paid) {
 		this.paid = paid;

@@ -16,17 +16,17 @@ import edu.sjsu.cmpe275.DirectExchange.repository.TransactionRepository;
 @Service
 @Transactional
 public class TransactionService {
-	@Autowired
-	TransactionRepository transactionRepository;
-	
-	public List<Transaction> getAllTransaction() {
-        return transactionRepository.findAllTransaction();
+    @Autowired
+    TransactionRepository transactionRepository;
+
+    public List<Transaction> getAllTransaction() {
+        return transactionRepository.findAll();
     }
 
     public Optional<Transaction> getTransactionById(long id) {
         return transactionRepository.findById(id);
     }
-    
+
     public List<Transaction> getTransactionByPaid(Boolean status) {
         return transactionRepository.findTransactionByPaid(status);
     }
@@ -34,7 +34,7 @@ public class TransactionService {
     public List<Transaction> getMainOffers(Offer offer) {
         return transactionRepository.findTransactionByMainOffer(offer);
     }
-    
+
     public List<Transaction> getOtherOffers(Offer offer) {
         return transactionRepository.findTransactionByOtherOffer(offer);
     }

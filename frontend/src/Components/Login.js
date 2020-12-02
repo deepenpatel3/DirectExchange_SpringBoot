@@ -1,3 +1,4 @@
+
 import React, { Component } from 'react';
 // import Navbar from './Reuse/Navbar';
 import firebase from 'firebase';
@@ -5,6 +6,9 @@ import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 import { Layout, Card, message } from 'antd';
 import axios from "axios";
 import { login } from '../helpers/authHelper'
+// import { process } from 'uniqid';
+require('dotenv').config();
+// const process = require('process');
 
 var uniqid = require('uniqid');
 const { Header, Content, Footer } = Layout;
@@ -45,10 +49,11 @@ class Login extends Component {
 
     userVerified = async () => {
 
-        console.log("userverified called" + process.env.REACT_APP_BACKEND_URL );
+        console.log(`userverified called, ${process.env.REACT_APP_BACKEND_URL}`);
         try {
-            let uid = firebase.auth().currentUser.uid;
-            let user = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/uid/${uid}`);
+            // let uid = firebase.auth().currentUser.uid;
+            console.log("uid ", firebase.auth().currentUser.uid);
+            let user = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/uid/${firebase.auth().currentUser.uid}`);
 
             if (user.data.verified) {
                 login(user.data);
@@ -67,8 +72,11 @@ class Login extends Component {
             username: currentUser.email,
             nickname: uniqid('direct-exchange-')
         }
+        console.log("data ", data);
         try {
+            console.log("calling create user api");
             let newUser = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/user`, data);
+            console.log("newUser ", newUser);
             await this.sendVerificationMail(newUser.data.id);
         }
         catch (e) {
