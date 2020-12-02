@@ -36,6 +36,9 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
 
     @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and source_country = :sourceCountry and destination_country = :destinationCountry", nativeQuery = true)
     List<Offer> findSameMatchingOffer(@Param("id") long id,@Param("matchingAmount") float matchingAmount,@Param("sourceCountry") String sourceCountry, @Param("destinationCountry") String destinationCountry);
+
+    @Query(value = "Select * from Offer Where matching_offers_id= :id", nativeQuery = true)
+    List<Offer> findOfferOfMatchingOffer(@Param("id") long id);
 }
 
 

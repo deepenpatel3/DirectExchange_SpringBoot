@@ -29,9 +29,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.w3c.dom.css.Counter;
 
-// import edu.sjsu.cmpe275.DirectExchange.model.CounterOffer;
+import edu.sjsu.cmpe275.DirectExchange.model.Transaction;
 import edu.sjsu.cmpe275.DirectExchange.model.Offer;
 import edu.sjsu.cmpe275.DirectExchange.model.BankAccount;
+import edu.sjsu.cmpe275.DirectExchange.service.TransactionService;
 import edu.sjsu.cmpe275.DirectExchange.service.BankAccountService;
 import edu.sjsu.cmpe275.DirectExchange.service.OfferService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +49,9 @@ public class OfferController {
     
      @Autowired
      BankAccountService bankAccountService;
+     
+     @Autowired
+     TransactionService transactionService;
 
     @PostMapping(value = "/offer")
     public ResponseEntity<?> postOffer(@RequestBody Offer offer) {
@@ -81,23 +85,6 @@ public class OfferController {
 	        offerService.deleteOffer(offerId);
         }
         else {
-//        	Set<Offer> counterOffers = postedOffer.get().getCounterOffers();
-//        	Set<Offer> newCounterOffers = new HashSet<Offer>();
-//        	for(Offer off : counterOffers) {
-//        		if(off.getId() == offerId) {
-//        			if(off.getHoldOffer()!= null) {
-//        				Offer oldOffer = off.getHoldOffer();
-//        				oldOffer.setStatus("open");
-//        				offerService.addOffer(oldOffer);
-//        			}
-//        			offerService.deleteOffer(off.getId());
-//        		}
-//        		else {
-//        			newCounterOffers.add(off);
-//        		}
-//        	}
-//        	postedOffer.get().setCounterOffers(newCounterOffers);
-//        	offerService.addOffer(postedOffer.get());
         	Optional<Offer> counterOffer = offerService.getOfferById(offerId);
         	if(counterOffer.get().getHoldOffer() != null) {
         		Offer oldOffer = counterOffer.get().getHoldOffer();
@@ -123,16 +110,13 @@ public class OfferController {
         }
         
         Offer mainOffer = offerService.getOfferById(mainOfferId).get();
-//        if(mainOffer.getDestinationCountry() != offer.getSourceCountry() || offer.getDestinationCountry() != mainOffer.getSourceCountry()) {
-//	    	 return new ResponseEntity<>("More than two countries are involved between two offers or both the offers are in the same direction.", HttpStatus.BAD_REQUEST);    				 
-//  	 	}
         float amount_to_remit = mainOffer.getAmountToRemit();
         float remaining_amount_to_remit = mainOffer.getRemainingBalance();
     	float counterOfferAmountToRemit = offer.getAmountToRemit();
     	if(mainOffer.isAllowCounterOffer() == true) {
 	        Boolean canSplit = mainOffer.isAllowSplitExchange();
 	        if(canSplit == true) {
-	        	if(counterOfferAmountToRemit > remaining_amount_to_remit-(amount_to_remit*0.1)) {
+	        	if(counterOfferAmountToRemit > remaining_amount_to_remit+(amount_to_remit*0.1)) {
 	        		return new ResponseEntity<>("Cannot add Counter offer more than Main Offer Amount.",HttpStatus.BAD_REQUEST);
 	        	}
 	        }
@@ -184,6 +168,10 @@ public class OfferController {
         mainOffer.setMatchingOffers(matchingOffers);
         mainOffer.setAccepted(true);
         offerService.addOffer(mainOffer);
+        Transaction transaction = new Transaction();
+        transaction.setMainOffer(mainOffer);
+        transaction.setOtherOffer(offer);
+        transactionService.addTransaction(transaction);
         return new ResponseEntity<>("Offer matched", HttpStatus.OK);
     }
 
@@ -214,7 +202,11 @@ public class OfferController {
     	        parentOffer.setRemainingBalance(remainingBal - counterOffer.getAmountToRemit());
     	        offerService.addOffer(parentOffer);
     	        offerService.addOffer(counterOffer);
-    	        return new ResponseEntity<>("Offer accepted1", HttpStatus.OK);
+    	        Transaction transaction = new Transaction();
+    	        transaction.setMainOffer(parentOffer);
+    	        transaction.setOtherOffer(counterOffer);
+    	        transactionService.addTransaction(transaction);
+    	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
         	}
         	else {
         		if((parentOffer.getAmountToRemit()*0.1) + remainingBal < counterOffer.getAmountToRemit()) {
@@ -231,6 +223,10 @@ public class OfferController {
     	        parentOffer.setRemainingBalance(remainingBal - counterOffer.getAmountToRemit());
     	        if(parentOffer.getRemainingBalance() <= parentOffer.getAmountToRemit()*0.1) {
     	        	parentOffer.setAccepted(true);
+    	        	Transaction transaction = new Transaction();
+        	        transaction.setMainOffer(parentOffer);
+        	        transaction.setOtherOffer(counterOffer);
+        	        transactionService.addTransaction(transaction);
     	        }
     	        offerService.addOffer(parentOffer);
     	        offerService.addOffer(counterOffer);
@@ -253,6 +249,10 @@ public class OfferController {
 	        parentOffer.setMatchingOffers(matchingOffers);
 	        offerService.addOffer(parentOffer);
 	        offerService.addOffer(counterOffer);
+	        Transaction transaction = new Transaction();
+	        transaction.setMainOffer(parentOffer);
+	        transaction.setOtherOffer(counterOffer);
+	        transactionService.addTransaction(transaction);
 	        return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
         }
        
@@ -303,6 +303,10 @@ public class OfferController {
 				 otherOffer.setAccepted(true);
 				 offerService.addOffer(otherOffer);
 				 offerService.addOffer(mainOffer);
+				 Transaction transaction = new Transaction();
+				 transaction.setMainOffer(mainOffer);
+				 transaction.setOtherOffer(otherOffer);
+				 transactionService.addTransaction(transaction);
 		    	 return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
     		 }
     		 else {
@@ -330,10 +334,13 @@ public class OfferController {
 				 otherOffer.setAccepted(true);
 				 offerService.addOffer(otherOffer);
 				 offerService.addOffer(mainOffer);
+				 Transaction transaction = new Transaction();
+				 transaction.setMainOffer(mainOffer);
+				 transaction.setOtherOffer(otherOffer);
+				 transactionService.addTransaction(transaction);
 		    	 return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 			 }
     	 }
-		 
      }
      
      @GetMapping("/getAllOfferOfSourceCurrency/{id}/{sourceCurrency}")

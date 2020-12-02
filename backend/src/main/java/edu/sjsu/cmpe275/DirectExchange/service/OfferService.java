@@ -49,6 +49,10 @@ public class OfferService {
         return offerRepository.findSameMatchingOffer(id,matchingAmount,sourceCountry, destinationCountry);
     }
     
+    public List<Offer> getOfferOfMatchingOffer(long id) {
+        return offerRepository.findOfferOfMatchingOffer(id);
+    }
+    
     public Offer addOffer(Offer offer) {
         return offerRepository.save(offer);
     }
