@@ -32,5 +32,5 @@ export const getloggedInUser = () => {
 }
 
 export const numOfBankAccounts = () => {
-    return JSON.parse(localStorage.getItem("user")).bankAccounts.length;
+    return localStorage.getItem("numOfAccounts");
 }

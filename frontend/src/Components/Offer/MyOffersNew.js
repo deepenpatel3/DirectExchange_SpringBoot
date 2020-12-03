@@ -131,6 +131,9 @@ class Message extends Component {
                 message.success(response.data);
                 this.getOffers();
             })
+            .catch(error => {
+                message.error(error.response.data);
+            })
     }
 
     deleteOffer = async (value) => {
@@ -285,9 +288,11 @@ class Message extends Component {
             {
                 title: 'Counter Offer',
                 key: 'action',
-                render: (text, record) => (
-                    <Button type="primary" onClick={() => { this.selectMatchingOffer(text) }}>Post</Button>
-                )
+                render: (text, record) => {
+                    if (text.allowCounterOffer) {
+                        return <Button type="primary" onClick={() => { this.selectMatchingOffer(text) }}>Post</Button>
+                    }
+                }
             }
         ]
 

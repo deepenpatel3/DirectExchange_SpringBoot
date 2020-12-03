@@ -485,7 +485,7 @@ public class OfferController {
 	}
 
 	public List<Offer> allExactMatchingOffer(long id) {
-		System.out.println("get all exact matching offers");
+		System.out.println("all exact matching offers");
 		Offer offer = offerService.getOfferById(id).get();
 		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
 		String sourceCountry = offer.getDestinationCountry();
@@ -496,9 +496,9 @@ public class OfferController {
 	}
 
 	public List<List<Offer>> allSplitMatchingOffer(long id) {
-		System.out.println("get all exact matching offers");
+		System.out.println("all split matching offers");
 		Offer offer = offerService.getOfferById(id).get();
-		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
+		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate()); // 70,000
 		String sourceCountry = offer.getDestinationCountry();
 		String destinationCountry = offer.getSourceCountry();
 		List<Offer> offers = offerService.getAllSplitMatchingOffer(offer.getUser().getId(), matchingAmount,
@@ -506,72 +506,73 @@ public class OfferController {
 		List<List<Offer>> return_list = new ArrayList<>();
 		int i = 0;
 		int j = offers.size() - 1;
-		if (i < j) {
-			while (i < j) {
-				Offer smaller = offers.get(i);
-				Offer bigger = offers.get(j);
-				float small_remaining = smaller.getRemainingBalance();
-				float bigger_remaining = bigger.getRemainingBalance();
-				if (small_remaining + bigger_remaining >= matchingAmount * 0.9
-						&& small_remaining + bigger_remaining <= matchingAmount * 1.1) {
-					List<Offer> pair_match = new ArrayList<Offer>();
-					pair_match.add(smaller);
-					pair_match.add(bigger);
-					return_list.add(pair_match);
-					if (i + 1 < j - 1) {
-						Offer smaller_next = offers.get(i + 1);
-						Offer bigger_next = offers.get(j - 1);
-						float small_remaining_next = smaller.getRemainingBalance();
-						float bigger_remaining_next = bigger.getRemainingBalance();
-						if (small_remaining == small_remaining_next && bigger_remaining == bigger_remaining_next) {
-							List<Offer> pair_match_1 = new ArrayList<Offer>();
-							pair_match.add(smaller);
-							pair_match.add(bigger_next);
-							return_list.add(pair_match_1);
+		// if (i < j) {
+		while (i < j) {
+			Offer smaller = offers.get(i);
+			Offer bigger = offers.get(j);
+			float small_remaining = smaller.getRemainingBalance();
+			float bigger_remaining = bigger.getRemainingBalance();
+			if (small_remaining + bigger_remaining >= matchingAmount * 0.9
+					&& small_remaining + bigger_remaining <= matchingAmount * 1.1) {
+				List<Offer> pair_match = new ArrayList<Offer>();
+				pair_match.add(smaller);
+				pair_match.add(bigger);
+				return_list.add(pair_match);
+				// if (i + 1 < j - 1) {
+				// Offer smaller_next = offers.get(i + 1);
+				// Offer bigger_next = offers.get(j - 1);
+				// float small_remaining_next = smaller.getRemainingBalance();
+				// float bigger_remaining_next = bigger.getRemainingBalance();
+				// if (small_remaining == small_remaining_next && bigger_remaining ==
+				// bigger_remaining_next) {
+				// List<Offer> pair_match_1 = new ArrayList<Offer>();
+				// pair_match.add(smaller);
+				// pair_match.add(bigger_next);
+				// return_list.add(pair_match_1);
 
-							List<Offer> pair_match_2 = new ArrayList<Offer>();
-							pair_match.add(smaller_next);
-							pair_match.add(bigger);
-							return_list.add(pair_match_2);
+				// List<Offer> pair_match_2 = new ArrayList<Offer>();
+				// pair_match.add(smaller_next);
+				// pair_match.add(bigger);
+				// return_list.add(pair_match_2);
 
-							List<Offer> pair_match_3 = new ArrayList<Offer>();
-							pair_match.add(smaller_next);
-							pair_match.add(bigger_next);
-							return_list.add(pair_match_3);
-							i = i + 2;
-							j = j - 2;
-						} else if (small_remaining == small_remaining_next) {
-							List<Offer> pair_match_2 = new ArrayList<Offer>();
-							pair_match.add(smaller_next);
-							pair_match.add(bigger);
-							return_list.add(pair_match_2);
-							i = i + 2;
-						} else if (bigger_remaining == bigger_remaining_next) {
-							List<Offer> pair_match_1 = new ArrayList<Offer>();
-							pair_match.add(smaller);
-							pair_match.add(bigger_next);
-							return_list.add(pair_match_1);
-							j = j - 2;
+				// List<Offer> pair_match_3 = new ArrayList<Offer>();
+				// pair_match.add(smaller_next);
+				// pair_match.add(bigger_next);
+				// return_list.add(pair_match_3);
+				// i = i + 2;
+				// j = j - 2;
+				// } else if (small_remaining == small_remaining_next) {
+				// List<Offer> pair_match_2 = new ArrayList<Offer>();
+				// pair_match.add(smaller_next);
+				// pair_match.add(bigger);
+				// return_list.add(pair_match_2);
+				// i = i + 2;
+				// } else if (bigger_remaining == bigger_remaining_next) {
+				// List<Offer> pair_match_1 = new ArrayList<Offer>();
+				// pair_match.add(smaller);
+				// pair_match.add(bigger_next);
+				// return_list.add(pair_match_1);
+				// j = j - 2;
 
-						} else {
-							i++;
-							j--;
-						}
-					}
-					i++;
-					j--;
-				} else if (small_remaining + bigger_remaining >= matchingAmount * 0.9) {
-					i++;
-				} else if (small_remaining + bigger_remaining <= matchingAmount * 1.1) {
-					j--;
-				}
+				// } else {
+				// i++;
+				// j--;
+				// }
+				// }
+				i++;
+				j--;
+			} else if (small_remaining + bigger_remaining < matchingAmount * 0.9) {
+				i++;
+			} else if (small_remaining + bigger_remaining > matchingAmount * 1.1) {
+				j--;
 			}
 		}
+		// }
 		return (return_list);
 	}
 
 	public List<Offer> allRangeMatchingOffer(long id) {
-		System.out.println("get all exact matching offers");
+		System.out.println("all range matching offers");
 		Offer offer = offerService.getOfferById(id).get();
 		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
 		System.out.println(matchingAmount);
@@ -583,7 +584,7 @@ public class OfferController {
 	}
 
 	public List<List<Offer>> allOppositeMatchingOffer(long id) {
-		System.out.println("get all exact matching offers");
+		System.out.println("all opposite matching offers A = C - B.");
 		Offer offer = offerService.getOfferById(id).get();
 		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
 		System.out.println(matchingAmount);
@@ -594,22 +595,34 @@ public class OfferController {
 		String sameDestinationCountry = offer.getDestinationCountry();
 		List<Offer> oppositeOffers = offerService.getAllOppositeMatchingOffer(offer.getUser().getId(), matchingAmount,
 				sourceCountry, destinationCountry);
+		System.out.println("opposite offer size " + oppositeOffers.size());
+		System.out.println("user id " + offer.getUser().getId() + " same source country " + sameSourceCountry
+				+ " same dest country " + sameDestinationCountry);
 		List<Offer> sameCountryOffers = offerService.getAllSameMatchingOffer(offer.getUser().getId(), sameSourceCountry,
 				sameDestinationCountry);
+		System.out.println("same country offer size " + sameCountryOffers.size());
 		List<List<Offer>> return_list = new ArrayList<>();
 		for (Offer c : oppositeOffers) {
 			if (c.isAllowSplitExchange() == true) {
 				float remaining_c = c.getRemainingBalance() * (c.getExchangeRate());
 				for (Offer b : sameCountryOffers) {
 					float remaining_b = b.getRemainingBalance();
+					System.out.println("remaining_b " + remaining_b + " remaining_c " + remaining_c);
 					if (remaining_c > remaining_b) {
-						if ((matchingAmount + remaining_b) * 0.9 < remaining_c
-								&& (matchingAmount + remaining_b) * 1.1 < remaining_c) {
+						System.out.println("in");
+						System.out.println(" C - B" + (remaining_c - remaining_b));
+						if (offer.getRemainingBalance() > (remaining_c - remaining_b) * 0.9
+								&& offer.getRemainingBalance() < (remaining_c - remaining_b) * 1.1) {
+							System.out.println("way in");
 							List<Offer> pair_match = new ArrayList<Offer>();
 							pair_match.add(c);
 							pair_match.add(b);
 							return_list.add(pair_match);
 						}
+						// if ((matchingAmount + remaining_b) * 0.9 < remaining_c
+						// && (matchingAmount + remaining_b) * 1.1 > remaining_c) {
+						// System.out.println("stupid");
+						// }
 					}
 				}
 			}

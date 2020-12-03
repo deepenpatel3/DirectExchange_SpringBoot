@@ -48,17 +48,17 @@ class BankAccounts extends Component {
                 console.log(res.data);
                 this.setState({
                     accounts: res.data
-                });
+                }, () => localStorage.setItem("numOfAccounts", res.data.length));
             });
     }
 
-    delete = async(text) => {
+    delete = async (text) => {
         await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/bankAccount/${text["accountNumber"]}`)
-        .then((res) =>{
-            message.success("Bank Account Deleted !!!")
-            this.getAccounts();
-        })
-        .catch((e) => message.error("Error Deleting Account"))
+            .then((res) => {
+                message.success("Bank Account Deleted !!!")
+                this.getAccounts();
+            })
+            .catch((e) => message.error("Error Deleting Account"))
     }
 
     update = async (text) => {
@@ -68,13 +68,13 @@ class BankAccounts extends Component {
         })
     }
 
-    onFinish = async(values) => {
+    onFinish = async (values) => {
         values["owner"] = { "id": localStorage.getItem("id") }
         await axios.post(`${process.env.REACT_APP_BACKEND_URL}/bankAccount`, values)
-            .then(async(res) => {
+            .then(async (res) => {
                 if (res.status === 201)
                     message.success("Bank Account Added");
-                
+
                 await this.getAccounts();
 
             })
@@ -90,7 +90,7 @@ class BankAccounts extends Component {
     onFinishUpdate = async (values) => {
         values["owner"] = { "id": localStorage.getItem("id") }
         await axios.put(`${process.env.REACT_APP_BACKEND_URL}/bankAccount`, values)
-            .then(async(res) => {
+            .then(async (res) => {
                 message.success("Bank Account Updated");
                 await this.getAccounts();
             })
@@ -154,7 +154,7 @@ class BankAccounts extends Component {
                 render: (text, record) => (
                     <Space size="middle">
                         <Button type="primary" onClick={() => { this.update(text) }} icon={<EditFilled />} />
-                        <Button type="danger" onClick={() => {this.delete(text)}} icon={<DeleteFilled />}/>
+                        <Button type="danger" onClick={() => { this.delete(text) }} icon={<DeleteFilled />} />
                     </Space>
                 )
             }
@@ -301,107 +301,107 @@ class BankAccounts extends Component {
                                 ]}
                                 destroyOnClose={true}
                             >
-                            <Form
-                                {...layout}
-                                name="basic"
-                                id = "insertForm"
-                                initialValues={{
-                                    sending: true,
-                                    receiving: true
-                                }}
-                                onFinish={this.onFinish}
-                                onFinishFailed={this.onFinishFailed}
+                                <Form
+                                    {...layout}
+                                    name="basic"
+                                    id="insertForm"
+                                    initialValues={{
+                                        sending: true,
+                                        receiving: true
+                                    }}
+                                    onFinish={this.onFinish}
+                                    onFinishFailed={this.onFinishFailed}
                                 // style={{ display: this.state.add }}
 
-                            >
-                                <Form.Item
-                                    label="Account Number"
-                                    name="accountNumber"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Account Number!',
-                                        },
-                                    ]}
                                 >
-                                    <Input />
-                                </Form.Item>
-                                <Form.Item
-                                    label="Bank Name"
-                                    name="name"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Bank Name!',
-                                        },
-                                    ]}
-                                >
-                                    <Input />
-                                </Form.Item>
+                                    <Form.Item
+                                        label="Account Number"
+                                        name="accountNumber"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Account Number!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
+                                    <Form.Item
+                                        label="Bank Name"
+                                        name="name"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Bank Name!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
 
-                                <Form.Item
-                                    label="Country"
-                                    name="country"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Country!',
-                                        },
-                                    ]}
-                                >
-                                    <Input />
-                                </Form.Item>
+                                    <Form.Item
+                                        label="Country"
+                                        name="country"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Country!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
 
-                                <Form.Item
-                                    label="Account Holder Name"
-                                    name="ownerName"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Account Holder Name!',
-                                        },
-                                    ]}
-                                >
-                                    <Input />
-                                </Form.Item>
-                                <Form.Item
-                                    label="Address"
-                                    name="ownerAddress"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Owners Address!',
-                                        },
-                                    ]}
-                                >
-                                    <Input.TextArea />
-                                </Form.Item>
-                                <Form.Item
-                                    label="Currency"
-                                    name="primaryCurrency"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Currency!',
-                                        },
-                                    ]}
-                                >
-                                    <Input />
-                                </Form.Item>
+                                    <Form.Item
+                                        label="Account Holder Name"
+                                        name="ownerName"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Account Holder Name!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
+                                    <Form.Item
+                                        label="Address"
+                                        name="ownerAddress"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Owners Address!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input.TextArea />
+                                    </Form.Item>
+                                    <Form.Item
+                                        label="Currency"
+                                        name="primaryCurrency"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Currency!',
+                                            },
+                                        ]}
+                                    >
+                                        <Input />
+                                    </Form.Item>
 
-                                <Form.Item {...tailLayout} name="sending" valuePropName="checked" >
-                                    <Checkbox checked="checked">sending</Checkbox>
-                                </Form.Item>
-                                <Form.Item {...tailLayout} name="receiving" valuePropName="checked">
-                                    <Checkbox checked="true">receiving</Checkbox>
-                                </Form.Item>
+                                    <Form.Item {...tailLayout} name="sending" valuePropName="checked" >
+                                        <Checkbox checked="checked">sending</Checkbox>
+                                    </Form.Item>
+                                    <Form.Item {...tailLayout} name="receiving" valuePropName="checked">
+                                        <Checkbox checked="true">receiving</Checkbox>
+                                    </Form.Item>
 
-                                {/* <Form.Item {...tailLayout}>
+                                    {/* <Form.Item {...tailLayout}>
                                     <Button type="primary" htmlType="submit">
                                         Submit
         </Button>
                                 </Form.Item> */}
-                            </Form>
+                                </Form>
                             </Modal>
                             <Divider />
                             <Table dataSource={this.state.accounts} columns={columns} />
