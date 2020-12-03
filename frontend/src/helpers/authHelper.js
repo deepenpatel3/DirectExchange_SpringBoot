@@ -5,10 +5,12 @@ export const logout = async () => {
     localStorage.removeItem("uid");
     localStorage.removeItem("nickname");
     localStorage.removeItem("username");
+    localStorage.removeItem("user");
 }
 
 export const login = (user) => {
     console.log("user ", user);
+    localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("id", user.id);
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("nickname", user.nickname);
@@ -21,10 +23,14 @@ export const getloggedInUser = () => {
             id: localStorage.getItem("id"),
             uid: localStorage.getItem("uid"),
             nickname: localStorage.getItem("nickname"),
-            username: localStorage.getItem("username")
+            username: localStorage.getItem("username"),
+            user: localStorage.getItem("user")
         }
-
         return user;
     }
     return null;
+}
+
+export const numOfBankAccounts = () => {
+    return JSON.parse(localStorage.getItem("user")).bankAccounts.length;
 }

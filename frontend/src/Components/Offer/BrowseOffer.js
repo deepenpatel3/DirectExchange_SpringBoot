@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import axios from "axios";
 import Navbar from "../Reuse/Navbar";
-import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider } from 'antd';
+import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider } from 'antd';
 import { Link } from "react-router-dom";
 import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, SmileTwoTone } from '@ant-design/icons';
 const { Header, Footer, Sider, Content } = Layout;
@@ -142,6 +142,46 @@ export default class BrowseOffer extends Component {
                 }
             })
     }
+    filterBySourceCurrencyAmount = (value) => {
+        console.log("in filter source currency amount", value);
+        // if (value == undefined) {
+        //     this.getOffers();
+        // }
+        // axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrency/${localStorage.getItem("id")}/${value}`)
+        //     .then(response => {
+        //         // console.log("allOffers ", response.data);
+        //         let allOffers = response.data;
+        //         if (allOffers.length > 0) {
+        //             let selectedOffer = allOffers[0];
+        //             console.log("allOffers ", allOffers);
+        //             console.log("first offer ", selectedOffer);
+        //             this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+        //         }
+        //         else {
+        //             this.setState({ allOffers: allOffers, selectedOffer: {} });
+        //         }
+        //     })
+    }
+    filterByDestinationCurrencyAmount = (value) => {
+        console.log("in filter destination currency amount", value);
+        // if (value == undefined) {
+        //     this.getOffers();
+        // }
+        // axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrency/${localStorage.getItem("id")}/${value}`)
+        //     .then(response => {
+        //         // console.log("allOffers ", response.data);
+        //         let allOffers = response.data;
+        //         if (allOffers.length > 0) {
+        //             let selectedOffer = allOffers[0];
+        //             console.log("allOffers ", allOffers);
+        //             console.log("first offer ", selectedOffer);
+        //             this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+        //         }
+        //         else {
+        //             this.setState({ allOffers: allOffers, selectedOffer: {} });
+        //         }
+        //     })
+    }
     acceptOffer = (values) => {
         console.log("accept values ", values);
         if (values.postedOffer === "none") {
@@ -193,40 +233,56 @@ export default class BrowseOffer extends Component {
                 <br />
                 {this.state.allOffers.length > 0 ?
                     <div >
-                        <Form layout="inline" style={{ float: 'left' }}>
-                            <Form.Item
-                                label="Source Currency"
-                                name="sourceCurrency">
-                                <Select
-                                    placeholder="Select the source currency"
-                                    allowClear
-                                    onChange={this.filterBySourceCurrency}
-                                >
-                                    <Option key="USD" value="USD">USD</Option>
-                                    <Option key="EUR" value="EUR">EUR</Option>
-                                    <Option key="INR" value="INR">INR</Option>
-                                    <Option key="GBP" value="GBP">GBP</Option>
-                                    <Option key="RMB" value="RMB">RMB</Option>
-                                </Select>
-                            </Form.Item>
-                        </Form>
-                        <Form layout="inline">
-                            <Form.Item
-                                label="Destination Currency"
-                                name="destinationCurrency">
-                                <Select
-                                    placeholder="Select the destination currency"
-                                    allowClear
-                                    onChange={this.filterByDestinationCurrency}
-                                >
-                                    <Option key="USD" value="USD">USD</Option>
-                                    <Option key="EUR" value="EUR">EUR</Option>
-                                    <Option key="INR" value="INR">INR</Option>
-                                    <Option key="GBP" value="GBP">GBP</Option>
-                                    <Option key="RMB" value="RMB">RMB</Option>
-                                </Select>
-                            </Form.Item>
-                        </Form>
+                        <Row>
+                            <Form layout="inline" style={{ float: 'left' }}>
+                                <Form.Item
+                                    label="Source Currency"
+                                    name="sourceCurrency">
+                                    <Select
+                                        style={{ width: "150px" }}
+                                        placeholder="Select the source currency"
+                                        allowClear
+                                        onChange={this.filterBySourceCurrency}
+                                    >
+                                        <Option key="USD" value="USD">USD</Option>
+                                        <Option key="EUR" value="EUR">EUR</Option>
+                                        <Option key="INR" value="INR">INR</Option>
+                                        <Option key="GBP" value="GBP">GBP</Option>
+                                        <Option key="RMB" value="RMB">RMB</Option>
+                                    </Select>
+                                </Form.Item>
+                            </Form>
+                            <Form layout="inline">
+                                <Form.Item
+                                    label="Destination Currency"
+                                    name="destinationCurrency">
+                                    <Select
+                                        style={{ width: "150px" }}
+                                        placeholder="Select the destination currency"
+                                        allowClear
+                                        onChange={this.filterByDestinationCurrency}
+                                    >
+                                        <Option key="USD" value="USD">USD</Option>
+                                        <Option key="EUR" value="EUR">EUR</Option>
+                                        <Option key="INR" value="INR">INR</Option>
+                                        <Option key="GBP" value="GBP">GBP</Option>
+                                        <Option key="RMB" value="RMB">RMB</Option>
+                                    </Select>
+                                </Form.Item>
+                            </Form>
+                        Source currency amount<Slider
+                                style={{ width: "150px" }}
+                                range
+                                defaultValue={[20, 50]}
+                                onAfterChange={this.filterBySourceCurrencyAmount}
+                            />
+                            Destination currency amount<Slider
+                                style={{ width: "150px" }}
+                                range
+                                defaultValue={[20, 50]}
+                                onAfterChange={this.filterByDestinationCurrencyAmount}
+                            />
+                        </Row>
                         <Layout title="Browse Offers">
                             <Sider theme="light" width={350}>
                                 {/* <div className="settings-tray" >
