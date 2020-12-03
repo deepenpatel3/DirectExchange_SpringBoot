@@ -161,6 +161,20 @@ public class OfferController {
 	public ResponseEntity<?> acceptMatchingOffer(@RequestBody Offer offer, @PathVariable long mainOfferId) {
 		System.out.println("posting matching offer -> ");
 
+		Offer mainOffer = offerService.getOfferById(mainOfferId).get();
+		// if (referenceOfferId.isPresent()) {
+		// Offer referenceOffer =
+		// offerService.getOfferById(referenceOfferId.get()).get();
+		// if (referenceOffer.getAmountToRemit() < mainOffer.getAmountToRemit() *
+		// mainOffer.getExchangeRate() * 0.9
+		// || referenceOffer.getAmountToRemit() > mainOffer.getAmountToRemit() *
+		// mainOffer.getExchangeRate()
+		// * 1.1) {
+		// return new ResponseEntity<>("Offer amount is not in required range of 10%",
+		// HttpStatus.BAD_REQUEST);
+		// }
+		// offer = referenceOffer;
+		// }
 		Set<BankAccount> canSend = bankAccountService.getCanSend(offer.getUser().getId(), offer.getSourceCountry());
 		Set<BankAccount> canReceive = bankAccountService.getCanReceive(offer.getUser().getId(),
 				offer.getDestinationCountry());
@@ -175,7 +189,7 @@ public class OfferController {
 		}
 		offer.setAccepted(true);
 		offerService.addOffer(offer);
-		Offer mainOffer = offerService.getOfferById(mainOfferId).get();
+		// Offer mainOffer = offerService.getOfferById(mainOfferId).get();
 		Set<Offer> matchingOffers = mainOffer.getMatchingOffers();
 		matchingOffers.add(offer);
 		mainOffer.setMatchingOffers(matchingOffers);
@@ -210,6 +224,13 @@ public class OfferController {
 					counterOffer.setHoldOffer(null);
 					offerService.deleteOffer(oldOffer.getId());
 				}
+
+				Transaction previousOfferTransaction = new Transaction();
+				previousOfferTransaction.setMainOffer(parentOffer);
+				Offer previousOffer = matchingOffers.iterator().next();
+				previousOfferTransaction.setOtherOffer(previousOffer);
+				transactionService.addTransaction(previousOfferTransaction);
+
 				counterOffer.setAccepted(true);
 				parentOffer.setAccepted(true);
 				matchingOffers.add(counterOffer);
@@ -287,13 +308,18 @@ public class OfferController {
 
 	@PostMapping(value = "/offer/otherOffer/{mainOfferId}/{otherOfferId}")
 	public ResponseEntity<?> addPostedOffers(@PathVariable long mainOfferId, @PathVariable long otherOfferId) {
+		System.out.println("addposted offers called");
 		Offer mainOffer = offerService.getOfferById(mainOfferId).get();
 		Offer otherOffer = offerService.getOfferById(otherOfferId).get();
 		float remainingBal = mainOffer.getRemainingBalance();
 		float remainingBalforOther = otherOffer.getRemainingBalance();
 
-		if (mainOffer.getDestinationCountry() != otherOffer.getSourceCountry()
-				|| otherOffer.getDestinationCountry() != mainOffer.getSourceCountry()) {
+		System.out.println("mainOffer.getDestinationCurrency() " + mainOffer.getDestinationCurrency()
+				+ " otherOffer.getSourceCurrency() " + otherOffer.getSourceCurrency()
+				+ " otherOffer.getDestinationCurrency() " + otherOffer.getDestinationCurrency()
+				+ " mainOffer.getSourceCurrency() " + mainOffer.getSourceCurrency());
+		if (!mainOffer.getDestinationCurrency().equalsIgnoreCase(otherOffer.getSourceCurrency())
+				|| !otherOffer.getDestinationCurrency().equalsIgnoreCase(mainOffer.getSourceCurrency())) {
 			return new ResponseEntity<>("More than two countries involved between two offers.", HttpStatus.BAD_REQUEST);
 		}
 
@@ -317,6 +343,13 @@ public class OfferController {
 					return new ResponseEntity<>("Offer cannot be added as amount not in remaining balance range",
 							HttpStatus.BAD_REQUEST);
 				}
+
+				Transaction previousOfferTransaction = new Transaction();
+				previousOfferTransaction.setMainOffer(mainOffer);
+				Offer previousOffer = matchingOffers.iterator().next();
+				previousOfferTransaction.setOtherOffer(previousOffer);
+				transactionService.addTransaction(previousOfferTransaction);
+
 				matchingOffers.add(otherOffer);
 				mainOffer.setRemainingBalance(
 						remainingBal - (otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate())));
@@ -331,10 +364,33 @@ public class OfferController {
 				transactionService.addTransaction(transaction);
 				return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 			} else {
-				if ((amountToRemit * 0.1) + remainingBal < otherOffer.getAmountToRemit()
+				System.out.println("otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate() "
+						+ otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate()));
+				System.out.println("(amountToRemit * 0.1) + remainingBal " + (remainingBal + amountToRemit * 0.1));
+				System.out.println("remainingBal - (amountToRemit * 0.1) " + (remainingBal - (amountToRemit * 0.1)));
+				System.out.println((amountToRemit * 0.1 + remainingBal) > (otherOffer.getRemainingBalance()
+						* otherOffer.getExchangeRate()));
+				if ((amountToRemit * 0.1) + remainingBal < otherOffer.getRemainingBalance()
 						* (otherOffer.getExchangeRate())) {
 					return new ResponseEntity<>("Offer cannot be added as amount not in remaining balance range",
 							HttpStatus.BAD_REQUEST);
+				} else if ((amountToRemit * 0.1 + remainingBal) > (otherOffer.getRemainingBalance()
+						* (otherOffer.getExchangeRate()))
+						&& (remainingBal - (amountToRemit * 0.1)) < (otherOffer.getRemainingBalance())
+								* (otherOffer.getExchangeRate())) {
+					matchingOffers.add(otherOffer);
+					mainOffer.setRemainingBalance(
+							remainingBal - (otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate())));
+					otherOffer.setRemainingBalance(0);
+					otherOffer.setAccepted(true);
+					mainOffer.setAccepted(true);
+					offerService.addOffer(otherOffer);
+					offerService.addOffer(mainOffer);
+					Transaction transaction = new Transaction();
+					transaction.setMainOffer(mainOffer);
+					transaction.setOtherOffer(otherOffer);
+					transactionService.addTransaction(transaction);
+					return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 				}
 				matchingOffers.add(otherOffer);
 				mainOffer.setRemainingBalance(
@@ -346,10 +402,14 @@ public class OfferController {
 				return new ResponseEntity<>("Offer Added", HttpStatus.OK);
 			}
 		} else {
+			System.out.println("remainingBal " + remainingBal + " amountToRemit * 0.1 " + amountToRemit * 0.1
+					+ " otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate() "
+					+ (otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate())
+							+ " (amountToRemit * 0.1) + remainingBal " + ((amountToRemit * 0.1) + remainingBal)));
 			if (remainingBal - (amountToRemit * 0.1) > otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate())
 					|| (amountToRemit * 0.1) + remainingBal < otherOffer.getAmountToRemit()
 							* (otherOffer.getExchangeRate())) {
-				return new ResponseEntity<>("Offer cannot be amount not in remaining balance range",
+				return new ResponseEntity<>("Offer cannot be matched. Amount not in remaining balance range",
 						HttpStatus.BAD_REQUEST);
 			} else {
 				matchingOffers.add(otherOffer);

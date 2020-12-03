@@ -16,10 +16,10 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and source_currency = :sourceCurrency", nativeQuery = true)
         Set<Offer> findOfferBySourceCurrency(@Param("id") long id, @Param("sourceCurrency") String sourceCurrency);
 
-        @Query(value = "Select * from Offer Where user_id = :id", nativeQuery = true)
+        @Query(value = "Select * from Offer Where user_id = :id and counter_offer_or_not = 0", nativeQuery = true)
         Set<Offer> findOfferByUserId(@Param("id") long id);
 
-        @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0", nativeQuery = true)
+        @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and accepted = 0", nativeQuery = true)
         Set<Offer> findOfferNotSelf(@Param("id") long id);
 
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and remainig_balance = :matchingAmount and source_country = :sourceCountry and destination_country = :destinationCountry", nativeQuery = true)

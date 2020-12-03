@@ -72,7 +72,7 @@ export default class BrowseOffer extends Component {
                     // window.location.assign("/browseOffer");
                 })
                 .catch(error => {
-                    // message.success(error);
+                    message.error(error.response.data);
                     console.log("error ", error);
                 })
 
@@ -95,7 +95,7 @@ export default class BrowseOffer extends Component {
                     // window.location.assign("/browseOffer");
                 })
                 .catch(error => {
-                    // message.success(error);
+                    message.error(error.response.data);
                     console.log("error ", error);
                 })
         }
@@ -135,17 +135,43 @@ export default class BrowseOffer extends Component {
                 }
             })
     }
+    acceptOffer = (values) => {
+        console.log("accept values ", values);
+        if (values.postedOffer === "none") {
+            let data = {
+                amountToRemit: this.state.selectedOffer.remainingBalance * this.state.selectedOffer.exchangeRate,
+                user: {
+                    id: localStorage.getItem("id"),
+                },
+                exchangeRate: 1 / this.state.selectedOffer.exchangeRate,
+                sourceCountry: this.state.selectedOffer.destinationCountry,
+                destinationCountry: this.state.selectedOffer.sourceCountry,
+                sourceCurrency: this.state.selectedOffer.destinationCurrency,
+                destinationCurrency: this.state.selectedOffer.sourceCurrency,
+                counterOfferOrNot: false
+            };
+            console.log("data ", data);
+            axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/matchingOffer/${this.state.selectedOffer.id}`, data)
+                .then(response => {
+                    message.success(response.data);
+                })
+                .catch(error => {
+                    message.error(error.response.data);
+                    console.log("error ", error);
+                })
+
+        } else {
+            axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/otherOffer/${this.state.selectedOffer.id}/${values.postedOffer}`)
+                .then(response => {
+                    message.success(response.data);
+                })
+                .catch(error => {
+                    message.error(error.response.data);
+                    console.log("error ", error);
+                })
+        }
+    }
     render() {
-        // console.log("selected offer ", this.state.selectedOffer);
-        // console.log("my offer ids ", this.state.allMyOffers);
-        // if (this.state.allOffers.length === 0) {
-        //     return (
-        //         <div>
-        //             <Navbar />
-        //             <h1>No offers to show...</h1>
-        //         </div>
-        //     )
-        // } else {
         return (
             <div>
                 <Navbar />
@@ -219,7 +245,8 @@ export default class BrowseOffer extends Component {
                                         <Card style={{ width: 300 }} bordered={false} onClick={() => this.setState({ selectedOffer: item })}>
                                             {item["amountToRemit"]}<br />
                                             {item["sourceCurrency"]}<ArrowRightOutlined />
-                                            {item["destinationCurrency"]}
+                                            {item["destinationCurrency"]}<br />
+                                            {item["accepted"] ? <p>Accepted: <CheckOutlined /> </p> : item["status"]}
                                         </Card>
                                     </List.Item>
                                 )}
@@ -242,6 +269,27 @@ export default class BrowseOffer extends Component {
                                         <Descriptions.Item label="Split">{this.state.selectedOffer.allowSplitExchange ? <CheckOutlined /> : <CloseOutlined />} </Descriptions.Item>
                                         <Descriptions.Item label="Counter Offer">{this.state.selectedOffer.allowCounterOffer ? <CheckOutlined /> : <CloseOutlined />}</Descriptions.Item>
                                     </Descriptions>
+                                    <Form ref={this.formRef}
+                                        onFinish={this.acceptOffer}
+                                    >
+                                        <Form.Item
+                                            label="Reference Offer"
+                                            name="postedOffer"
+                                            rules={[{ required: true, message: 'Please input your amount!' }]}>
+                                            <Select
+                                                placeholder="Select a option and change input text above"
+                                                allowClear
+                                                options={this.state.allMyOffers}
+                                            // onChange={this.changeHold}
+                                            >
+                                            </Select>
+                                        </Form.Item>
+                                        <Form.Item >
+                                            <Button type="primary" htmlType="submit">
+                                                Accept
+                                        </Button>
+                                        </Form.Item>
+                                    </Form>
                                 </TabPane>
                                 <TabPane tab="Counter Offers" key="2">
                                     <List
@@ -251,6 +299,7 @@ export default class BrowseOffer extends Component {
                                                 {item["amountToRemit"]}<br />
                                                 {item["sourceCurrency"]}<ArrowRightOutlined />
                                                 {item["destinationCurrency"]}
+                                                {item["accepted"]}
                                             </List.Item>
                                         )}
                                     />{this.state.selectedOffer.allowCounterOffer ?
@@ -352,7 +401,7 @@ export default class BrowseOffer extends Component {
                             </Form>
                         </Sider>
                         <Sider theme="light" width={300}>
-
+                            <p>No Offers to show</p>
                         </Sider>
                         <Content className="container">
                             <Tabs defaultActiveKey="1" >

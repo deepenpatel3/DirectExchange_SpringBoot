@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-DirectExchangeApplication<DirectExchange>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "mainClass": "edu.sjsu.cmpe275.DirectExchange.DirectExchangeApplication",
+            "projectName": "DirectExchange",
+            "args": ""
+        }
+    ]
+}
