@@ -10,7 +10,7 @@ import MyOffers from "./Offer/MyOffers";
 import BankAccounts from './BankAccounts';
 import Offers from "./Offer/Offer";
 import MyOffersNew from "./Offer/MyOffersNew";
-
+import TransactionHistory from "./TransactionHistory";
 
 class Main extends Component {
     render() {
@@ -27,6 +27,7 @@ class Main extends Component {
                 <ProtectedRoute path="/myOffers" component={MyOffersNew} />
                 <ProtectedRoute path="/accounts" component={BankAccounts} />
                 <ProtectedRoute path="/offer" component={Offers} />
+                <ProtectedRoute path="/transactionHistory" component={TransactionHistory} />
             </div>
         )
     }

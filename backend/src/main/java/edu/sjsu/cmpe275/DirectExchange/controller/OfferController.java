@@ -188,12 +188,14 @@ public class OfferController {
 					+ "with Receiving enabled to receive money.", HttpStatus.BAD_REQUEST);
 		}
 		offer.setAccepted(true);
+		offer.setStatus("inTransaction");
 		offerService.addOffer(offer);
 		// Offer mainOffer = offerService.getOfferById(mainOfferId).get();
 		Set<Offer> matchingOffers = mainOffer.getMatchingOffers();
 		matchingOffers.add(offer);
 		mainOffer.setMatchingOffers(matchingOffers);
 		mainOffer.setAccepted(true);
+		mainOffer.setStatus("inTransaction");
 		offerService.addOffer(mainOffer);
 		Transaction transaction = new Transaction();
 		transaction.setMainOffer(mainOffer);
@@ -228,11 +230,15 @@ public class OfferController {
 				Transaction previousOfferTransaction = new Transaction();
 				previousOfferTransaction.setMainOffer(parentOffer);
 				Offer previousOffer = matchingOffers.iterator().next();
+				previousOffer.setStatus("inTransaction");
+				offerService.addOffer(previousOffer);
 				previousOfferTransaction.setOtherOffer(previousOffer);
 				transactionService.addTransaction(previousOfferTransaction);
 
 				counterOffer.setAccepted(true);
+				counterOffer.setStatus("inTransaction");
 				parentOffer.setAccepted(true);
+				parentOffer.setStatus("inTransaction");
 				matchingOffers.add(counterOffer);
 				parentOffer.setMatchingOffers(matchingOffers);
 				parentOffer.setRemainingBalance(remainingBal - counterOffer.getAmountToRemit());
@@ -254,11 +260,14 @@ public class OfferController {
 					offerService.deleteOffer(oldOffer.getId());
 				}
 				counterOffer.setAccepted(true);
+
 				matchingOffers.add(counterOffer);
 				parentOffer.setMatchingOffers(matchingOffers);
 				parentOffer.setRemainingBalance(remainingBal - counterOffer.getAmountToRemit());
 				if (parentOffer.getRemainingBalance() <= parentOffer.getAmountToRemit() * 0.1) {
 					parentOffer.setAccepted(true);
+					counterOffer.setStatus("inTransaction");
+					parentOffer.setStatus("inTransaction");
 					Transaction transaction = new Transaction();
 					transaction.setMainOffer(parentOffer);
 					transaction.setOtherOffer(counterOffer);
@@ -280,6 +289,8 @@ public class OfferController {
 			}
 			counterOffer.setAccepted(true);
 			parentOffer.setAccepted(true);
+			counterOffer.setStatus("inTransaction");
+			parentOffer.setStatus("inTransaction");
 			matchingOffers.add(counterOffer);
 			parentOffer.setRemainingBalance(remainingBal - counterOffer.getAmountToRemit());
 			parentOffer.setMatchingOffers(matchingOffers);
@@ -304,6 +315,13 @@ public class OfferController {
 		offerService.addOffer(mainOffer);
 		return new ResponseEntity<>("Amount to remit for Offer updated, please complete the transaction",
 				HttpStatus.OK);
+	}
+
+	@GetMapping("/transactions/{id}")
+	public ResponseEntity<?> getCompletedTransactions(@PathVariable long id) {
+		System.out.println("Get transactions for a user -> " + id);
+
+		return new ResponseEntity<>(offerService.getCompletedOffers(id), HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/offer/otherOffer/{mainOfferId}/{otherOfferId}")
@@ -347,6 +365,8 @@ public class OfferController {
 				Transaction previousOfferTransaction = new Transaction();
 				previousOfferTransaction.setMainOffer(mainOffer);
 				Offer previousOffer = matchingOffers.iterator().next();
+				previousOffer.setStatus("inTransaction");
+				offerService.addOffer(previousOffer);
 				previousOfferTransaction.setOtherOffer(previousOffer);
 				transactionService.addTransaction(previousOfferTransaction);
 
@@ -356,6 +376,8 @@ public class OfferController {
 				otherOffer.setRemainingBalance(0);
 				mainOffer.setAccepted(true);
 				otherOffer.setAccepted(true);
+				mainOffer.setStatus("inTransaction");
+				otherOffer.setStatus("inTransaction");
 				offerService.addOffer(otherOffer);
 				offerService.addOffer(mainOffer);
 				Transaction transaction = new Transaction();
@@ -384,6 +406,8 @@ public class OfferController {
 					otherOffer.setRemainingBalance(0);
 					otherOffer.setAccepted(true);
 					mainOffer.setAccepted(true);
+					mainOffer.setStatus("inTransaction");
+					otherOffer.setStatus("inTransaction");
 					offerService.addOffer(otherOffer);
 					offerService.addOffer(mainOffer);
 					Transaction transaction = new Transaction();
@@ -418,6 +442,8 @@ public class OfferController {
 				otherOffer.setRemainingBalance(0);
 				mainOffer.setAccepted(true);
 				otherOffer.setAccepted(true);
+				mainOffer.setStatus("inTransaction");
+				otherOffer.setStatus("inTransaction");
 				offerService.addOffer(otherOffer);
 				offerService.addOffer(mainOffer);
 				Transaction transaction = new Transaction();
@@ -464,8 +490,8 @@ public class OfferController {
 		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
 		String sourceCountry = offer.getDestinationCountry();
 		String destinationCountry = offer.getSourceCountry();
-		List<Offer> offers = offerService.getAllExactMatchingOffer(id, matchingAmount, sourceCountry,
-				destinationCountry);
+		List<Offer> offers = offerService.getAllExactMatchingOffer(offer.getUser().getId(), matchingAmount,
+				sourceCountry, destinationCountry);
 		return (offers);
 	}
 
@@ -475,13 +501,13 @@ public class OfferController {
 		float matchingAmount = offer.getRemainingBalance() * (offer.getExchangeRate());
 		String sourceCountry = offer.getDestinationCountry();
 		String destinationCountry = offer.getSourceCountry();
-		List<Offer> offers = offerService.getAllSplitMatchingOffer(id, matchingAmount, sourceCountry,
-				destinationCountry);
+		List<Offer> offers = offerService.getAllSplitMatchingOffer(offer.getUser().getId(), matchingAmount,
+				sourceCountry, destinationCountry);
 		List<List<Offer>> return_list = new ArrayList<>();
 		int i = 0;
-		int j = offers.size();
+		int j = offers.size() - 1;
 		if (i < j) {
-			while (i <= j) {
+			while (i < j) {
 				Offer smaller = offers.get(i);
 				Offer bigger = offers.get(j);
 				float small_remaining = smaller.getRemainingBalance();
@@ -532,6 +558,8 @@ public class OfferController {
 							j--;
 						}
 					}
+					i++;
+					j--;
 				} else if (small_remaining + bigger_remaining >= matchingAmount * 0.9) {
 					i++;
 				} else if (small_remaining + bigger_remaining <= matchingAmount * 1.1) {
@@ -549,8 +577,8 @@ public class OfferController {
 		System.out.println(matchingAmount);
 		String sourceCountry = offer.getDestinationCountry();
 		String destinationCountry = offer.getSourceCountry();
-		List<Offer> offers = offerService.getAllRangeMatchingOffer(id, matchingAmount, sourceCountry,
-				destinationCountry);
+		List<Offer> offers = offerService.getAllRangeMatchingOffer(offer.getUser().getId(), matchingAmount,
+				sourceCountry, destinationCountry);
 		return (offers);
 	}
 
@@ -564,22 +592,24 @@ public class OfferController {
 
 		String sameSourceCountry = offer.getSourceCountry();
 		String sameDestinationCountry = offer.getDestinationCountry();
-		List<Offer> oppositeOffers = offerService.getAllOppositeMatchingOffer(id, matchingAmount, sourceCountry,
-				destinationCountry);
-		List<Offer> sameCountryOffers = offerService.getAllSameMatchingOffer(id, sameSourceCountry,
+		List<Offer> oppositeOffers = offerService.getAllOppositeMatchingOffer(offer.getUser().getId(), matchingAmount,
+				sourceCountry, destinationCountry);
+		List<Offer> sameCountryOffers = offerService.getAllSameMatchingOffer(offer.getUser().getId(), sameSourceCountry,
 				sameDestinationCountry);
 		List<List<Offer>> return_list = new ArrayList<>();
 		for (Offer c : oppositeOffers) {
-			float remaining_c = c.getRemainingBalance() * (c.getExchangeRate());
-			for (Offer b : sameCountryOffers) {
-				float remaining_b = b.getRemainingBalance();
-				if (remaining_c > remaining_b) {
-					if ((matchingAmount + remaining_b) * 0.9 < remaining_c
-							&& (matchingAmount + remaining_b) * 1.1 < remaining_c) {
-						List<Offer> pair_match = new ArrayList<Offer>();
-						pair_match.add(c);
-						pair_match.add(b);
-						return_list.add(pair_match);
+			if (c.isAllowSplitExchange() == true) {
+				float remaining_c = c.getRemainingBalance() * (c.getExchangeRate());
+				for (Offer b : sameCountryOffers) {
+					float remaining_b = b.getRemainingBalance();
+					if (remaining_c > remaining_b) {
+						if ((matchingAmount + remaining_b) * 0.9 < remaining_c
+								&& (matchingAmount + remaining_b) * 1.1 < remaining_c) {
+							List<Offer> pair_match = new ArrayList<Offer>();
+							pair_match.add(c);
+							pair_match.add(b);
+							return_list.add(pair_match);
+						}
 					}
 				}
 			}
@@ -593,21 +623,19 @@ public class OfferController {
 		Set<Offer> matchingOffer = offer.getMatchingOffers();
 		List<Offer> exactMatch = allExactMatchingOffer(id);
 		List<Offer> rangeMatch = allRangeMatchingOffer(id);
-		List<Offer> matches = exactMatch;
-		matches.addAll(rangeMatch);
+		List<List<Offer>> oppositeMatch = allOppositeMatchingOffer(id);
+
+		HashMap<String, Object> final_obj = new HashMap<String, Object>();
+		final_obj.put("Exact", exactMatch);
+		final_obj.put("Range", rangeMatch);
+		final_obj.put("Range", oppositeMatch);
+
 		if (offer.isAllowSplitExchange() == true) {
 			if (matchingOffer.size() == 0) {
 				List<List<Offer>> splitMatch = allSplitMatchingOffer(id);
-				List<List<Offer>> oppositeMatch = allOppositeMatchingOffer(id);
-				splitMatch.addAll(oppositeMatch);
-				HashMap<String, Object> final_obj = new HashMap<String, Object>();
-				final_obj.put("Exact_and_range", matches);
-				final_obj.put("Split_and_Opposite", splitMatch);
-				return new ResponseEntity<>(final_obj, HttpStatus.OK);
+				final_obj.put("Split", splitMatch);
 			}
 		}
-		HashMap<String, Object> final_obj = new HashMap<String, Object>();
-		final_obj.put("Exact_and_range", matches);
 		return new ResponseEntity<>(final_obj, HttpStatus.OK);
 	}
 }

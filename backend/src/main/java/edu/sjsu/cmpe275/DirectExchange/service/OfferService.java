@@ -25,6 +25,10 @@ public class OfferService {
         return offerRepository.findById(id);
     }
 
+    public Set<Offer> getCompletedOffers(long id) {
+        return offerRepository.findCompletedOfferOfAUser(id);
+    }
+
     public Set<Offer> getOffersBySourceCurrency(long id, String sourceCurrency) {
         return offerRepository.findOfferBySourceCurrency(id, sourceCurrency);
     }

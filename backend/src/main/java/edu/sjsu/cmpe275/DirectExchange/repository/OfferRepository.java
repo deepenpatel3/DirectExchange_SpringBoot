@@ -13,6 +13,9 @@ import edu.sjsu.cmpe275.DirectExchange.model.Offer;
 @Repository
 public interface OfferRepository extends JpaRepository<Offer, Long> {
 
+        @Query(value = "Select * from Offer Where user_id = :id and status = 'completed' ", nativeQuery = true)
+        Set<Offer> findCompletedOfferOfAUser(@Param("id") long id);
+
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and source_currency = :sourceCurrency", nativeQuery = true)
         Set<Offer> findOfferBySourceCurrency(@Param("id") long id, @Param("sourceCurrency") String sourceCurrency);
 
