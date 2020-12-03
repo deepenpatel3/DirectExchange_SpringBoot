@@ -16,30 +16,27 @@ public class UserService {
 
 	@Autowired
 	public UserRepository UserRepository;
-	
-	public Optional<User> getUser(long id){
+
+	public Optional<User> getUser(long id) {
 		return UserRepository.findById(id);
 	}
-	
-	public User getUserByUID(String uid){
-		List<User> users =  UserRepository.findUserByUid(uid);
-		return users.size() > 0 ? users.get(0): null;
+
+	public Optional<User> getUserByUID(String uid) {
+		return UserRepository.findUserByUid(uid);
+		// return users.size() > 0 ? users.get(0): null;
 	}
-	
-	
-	
-	public User addUser(User user){
+
+	public User addUser(User user) {
 		return UserRepository.save(user);
 	}
-	
+
 	public User updateUser(long id, User user) {
 		user.setId(id);
 		return UserRepository.save(user);
 	}
-	
+
 	public void deleteUser(long id) {
 		UserRepository.deleteById(id);
 	}
-	
-	
+
 }

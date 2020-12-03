@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe275.DirectExchange.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +12,7 @@ import edu.sjsu.cmpe275.DirectExchange.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-	
-	List<User> findUserByUid(String uid);
+
+	Optional<User> findUserByUid(String uid);
 
 }

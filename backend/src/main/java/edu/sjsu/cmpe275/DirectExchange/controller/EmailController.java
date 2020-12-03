@@ -16,14 +16,17 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@CrossOrigin(origins = "*")
 public class EmailController {
 
-    private void sendmail(String sender, String reciever, String message) throws AddressException, MessagingException, IOException {
+    private void sendmail(String sender, String receiver, String message)
+            throws AddressException, MessagingException, IOException {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -32,13 +35,13 @@ public class EmailController {
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("directexchange.cmpe275@gmail.com", "XXXX--PASTE PASSWORD HERE --XX");
+                return new PasswordAuthentication("directexchange.cmpe275@gmail.com", "direct@123");
             }
         });
         Message msg = new MimeMessage(session);
         msg.setFrom(new InternetAddress(sender, false));
 
-        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(reciever));
+        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(receiver));
         msg.setSubject("Message from : " + sender + " via DIRECT EXCHANGE ");
         msg.setContent(message, "text/html");
         msg.setSentDate(new Date());
@@ -46,13 +49,13 @@ public class EmailController {
         addresses[0] = new InternetAddress(sender, false);
         msg.setReplyTo(addresses);
 
-        
         Transport.send(msg);
     }
 
     @RequestMapping(value = "/sendemail")
-    public String sendEmail(@RequestParam String sender, @RequestParam String reciever,@RequestParam String message) throws AddressException, MessagingException, IOException {
-        sendmail(sender,reciever,message);
+    public String sendEmail(@RequestParam String sender, @RequestParam String receiver, @RequestParam String message)
+            throws AddressException, MessagingException, IOException {
+        sendmail(sender, receiver, message);
         return "Email sent successfully";
     }
 }

@@ -7,7 +7,7 @@ import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, Smil
 const { Header, Footer, Sider, Content } = Layout;
 const { TabPane } = Tabs;
 const { Option } = Select;
-
+const { TextArea } = Input;
 
 export default class BrowseOffer extends Component {
     constructor(props) {
@@ -178,6 +178,14 @@ export default class BrowseOffer extends Component {
                 })
         }
     }
+    sendMessage = (values) => {
+        console.log("sending message ", values);
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/sendemail/`, { params: { "sender": localStorage.getItem("username"), "message": values.message, "receiver": values.receiver } })
+            .then(response => {
+                // console.log("allOffers ", response.data);
+                message.success(response.data);
+            })
+    }
     render() {
         return (
             <div>
@@ -329,7 +337,7 @@ export default class BrowseOffer extends Component {
                                                 <Form.Item >
                                                     <Button type="primary" htmlType="submit">
                                                         Accept
-                                        </Button>
+                                                    </Button>
                                                 </Form.Item>
                                             </Form>
                                         </TabPane>
@@ -395,6 +403,33 @@ export default class BrowseOffer extends Component {
                                                     </List.Item>
                                                 )}
                                             />
+                                        </TabPane>
+                                        <TabPane tab="Message" key="4">
+                                            <Form ref={this.formRef}
+                                                onFinish={(values) => this.sendMessage(values)}
+                                                layout="vertical"
+                                                initialValues={{
+                                                    receiver: this.state.selectedOffer.user.username,
+                                                }}
+                                            >
+                                                <Form.Item
+                                                    label="Message"
+                                                    name="message"
+                                                    rules={[{ required: true, message: 'Please type your message!' }]}
+                                                >
+                                                    <TextArea rows={4} />
+                                                </Form.Item>
+                                                <Form.Item
+                                                    name="receiver"
+                                                    rules={[{ required: true }]}>
+                                                    <Input hidden aria-disabled value={this.state.selectedOffer.user.username} />
+                                                </Form.Item>
+                                                <Form.Item >
+                                                    <Button type="primary" htmlType="submit">
+                                                        Send
+                                                    </Button>
+                                                </Form.Item>
+                                            </Form>
                                         </TabPane>
                                     </Tabs>
                                 </PageHeader>

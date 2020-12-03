@@ -33,9 +33,9 @@ public class UserController {
 		try {
 			System.out.println("create user -> " + user.getUid());
 
-			User user_found = userService.getUserByUID(user.getUid());
+			Optional<User> user_found = userService.getUserByUID(user.getUid());
 
-			if (user_found != null) {
+			if (user_found.isPresent()) {
 				return new ResponseEntity<>("User already exists", HttpStatus.BAD_REQUEST);
 			}
 
@@ -71,9 +71,12 @@ public class UserController {
 	public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
 		System.out.println("get user by id called");
 		try {
-			User user_found = userService.getUserByUID(uid);
+			Optional<User> user_found = userService.getUserByUID(uid);
 
-			if (user_found != null) {
+			if (user_found.isPresent()) {
+				System.out.println("user " + user_found.get().getId() + " nickname " + user_found.get().getNickname()
+						+ " username " + user_found.get().getUsername());
+				System.out.println("user " + user_found.get().toString());
 				return new ResponseEntity<>(user_found, HttpStatus.OK);
 			} else {
 				return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
