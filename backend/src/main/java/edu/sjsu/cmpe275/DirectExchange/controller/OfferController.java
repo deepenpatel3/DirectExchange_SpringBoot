@@ -505,7 +505,7 @@ public class OfferController {
 				sourceCountry, destinationCountry);
 		List<List<Offer>> return_list = new ArrayList<>();
 		int i = 0;
-		int j = offers.size() - 1;
+		int j = offers.size() -1 ;
 		if (i < j) {
 			while (i < j) {
 				Offer smaller = offers.get(i);
@@ -617,25 +617,49 @@ public class OfferController {
 		return (return_list);
 	}
 
+//	@GetMapping("/getMatchingOffer/{id}")
+//	public ResponseEntity<?> getMatchingOffer(@PathVariable long id) {
+//		Offer offer = offerService.getOfferById(id).get();
+//		Set<Offer> matchingOffer = offer.getMatchingOffers();
+//		List<Offer> exactMatch = allExactMatchingOffer(id);
+//		List<Offer> rangeMatch = allRangeMatchingOffer(id);
+//		List<Offer> matches = exactMatch;
+//		matches.addAll(rangeMatch);
+//		if (offer.isAllowSplitExchange() == true) {
+//			if (matchingOffer.size() == 0) {
+//				List<List<Offer>> splitMatch = allSplitMatchingOffer(id);
+//				List<List<Offer>> oppositeMatch = allOppositeMatchingOffer(id);
+//				splitMatch.addAll(oppositeMatch);
+//				HashMap<String, Object> final_obj = new HashMap<String, Object>();
+//				final_obj.put("Exact_and_range", matches);
+//				final_obj.put("Split_and_Opposite", splitMatch);
+//				return new ResponseEntity<>(final_obj, HttpStatus.OK);
+//			}
+//		}
+//		HashMap<String, Object> final_obj = new HashMap<String, Object>();
+//		final_obj.put("Exact_and_range", matches);
+//		return new ResponseEntity<>(final_obj, HttpStatus.OK);
+//	}
+	
 	@GetMapping("/getMatchingOffer/{id}")
 	public ResponseEntity<?> getMatchingOffer(@PathVariable long id) {
 		Offer offer = offerService.getOfferById(id).get();
 		Set<Offer> matchingOffer = offer.getMatchingOffers();
 		List<Offer> exactMatch = allExactMatchingOffer(id);
 		List<Offer> rangeMatch = allRangeMatchingOffer(id);
-		List<List<Offer>> oppositeMatch = allOppositeMatchingOffer(id);
-
 		HashMap<String, Object> final_obj = new HashMap<String, Object>();
 		final_obj.put("Exact", exactMatch);
 		final_obj.put("Range", rangeMatch);
-		final_obj.put("Range", oppositeMatch);
-
 		if (offer.isAllowSplitExchange() == true) {
 			if (matchingOffer.size() == 0) {
 				List<List<Offer>> splitMatch = allSplitMatchingOffer(id);
+				List<List<Offer>> oppositeMatch = allOppositeMatchingOffer(id);
 				final_obj.put("Split", splitMatch);
+				final_obj.put("Opposite", oppositeMatch);
 			}
 		}
 		return new ResponseEntity<>(final_obj, HttpStatus.OK);
 	}
+
 }
+s
