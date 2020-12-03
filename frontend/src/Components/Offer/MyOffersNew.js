@@ -43,7 +43,9 @@ class Message extends Component {
             text: {},
             allMyOffers: [],
             countries: [],
-            currentOffer: {}
+            currentOffer: {},
+            matchingOffers: {},
+            counterOfferValue : 0,
         }
     }
 
@@ -162,8 +164,64 @@ class Message extends Component {
             })
     }
 
+    getMatchingOffers = async (id) => {
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getMatchingOffer/` +id)
+            .then(response => {
+                console.log(response.data);
+                this.setState({
+                    matchingOffers: response.data
+                });
+            });
+    }
+
+    postMatchingCounterOffer = async () => {
+
+        let text = this.state.matchingCounterOffer;
+        let data = {
+            amountToRemit: this.state.counterOfferValue,
+            sourceCurrency:  text["destinationCurrency"],
+            sourceCountry: text["destinationCountry"] ,
+            exchangeRate: text["exchangeRate"],
+            destinationCurrency: text["sourceCurrency"],
+            destinationCountry:text["sourceCountry"] ,
+            counterOfferOrNot : true,
+            user:{
+                "id": localStorage.getItem("id")
+            }
+        }
+        console.log(data);
+        //offer/counterOffer/{mainOfferId}/{holdOfferId}
+
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/counterOffer/${text.id}/${this.state.currentOffer.id}`, data)
+            .then(response => {
+                message.success(response.data);
+                this.getOffers();
+            })
+    }
+
+
+    acceptMatchingOffer = async (id) => {
+        try{
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/otherOffer/${id}/${this.state.currentOffer.id}`,{})
+            .then(response => {
+               message.success("Offer Fulfilled, Please Complete the transaction");
+               this.getOffers();
+            });
+        }
+        catch(e){
+            message.error(e.message);
+        }
+     
+    }
+
+    selectMatchingOffer = (offer) =>{
+        this.setState({
+            matchingCounterOffer : offer ,
+            matchingCounterOfferVisible : true
+        })
+    }
     render() {
-        const { currentOffer } = this.state;
+        const { currentOffer , matchingOffers } = this.state;
         const columns = [
             {
                 title: 'Ammount to Remit',
@@ -199,6 +257,79 @@ class Message extends Component {
         ]
 
 
+        const singleMathingOffers = [
+            {
+                title: 'Ammount to Remit',
+                dataIndex: 'amountToRemit',
+                key: 'amountToRemit',
+            },
+            {
+                title: 'Exchange rate',
+                dataIndex: 'exchangeRate',
+                key: 'exchangeRate',
+            },
+            {
+                title: 'Expiration Date',
+                dataIndex: 'expirationDate',
+                key: 'exchangeRate',
+            },
+            {
+                title: 'Accept',
+                key: 'action',
+                render: (text, record) => (
+                        <Button type="primary" onClick={() => { this.acceptMatchingOffer(text.id) }} icon={<CheckOutlined />} />
+                )
+            },
+            {
+                title: 'Counter Offer',
+                key: 'action',
+                render: (text, record) => (
+                        <Button type="primary" onClick={() => {this.selectMatchingOffer(text)}}>Post</Button>
+                )
+            }
+        ]
+
+
+        const splitMatchingOffers = [
+            {
+                title: 'Ammount to Remit',
+                dataIndex: 'amountToRemit',
+                key: 'amountToRemit',
+            },
+            {
+                title: 'Exchange rate',
+                dataIndex: 'exchangeRate',
+                key: 'exchangeRate',
+            },
+            {
+                title: 'Accept',
+                key: 'action',
+                render: (text, record) => (
+                        <Button type="primary" onClick={() => { this.acceptMatchingOffer(text.id) }} icon={<CheckOutlined />} />
+                )
+            },
+            {
+                title: 'Counter Offer',
+                key: 'action',
+                render: (text, record) => (
+                        <Button type="primary" onClick={() => {this.postCounterOffer(text.id)}}>Post</Button>
+                )
+            }
+        ]
+        let exact= matchingOffers.Exact ;
+        let opposite=matchingOffers.Opposite;
+        let range=matchingOffers.Range;
+        // let split = [];
+        // if(matchingOffers && matchingOffers.Split && matchingOffers.Split.length > 0){
+        //     matchingOffers.Split.forEach(offers => {
+        //         let obj= {};
+        //         obj.amountToRemit = offers[0].amountToRemit + "+" + offers[1].amountToRemit;
+        //         obj.exchangeRate = offers[0].exchangeRate ;
+        //         obj.ids = [offers[0].id , offers[1].id];
+        //         split.push(obj);
+        //     });
+        // }
+        
         return (
             <div >
                 <Navbar selectedKey="profile:1"/>
@@ -306,6 +437,25 @@ class Message extends Component {
                                             <br />
                                             <span className="ant-descriptions-title">Counter offers </span>
                                             <Table columns={columns} dataSource={currentOffer.counterOffers}  pagination={{ defaultPageSize: 5}} />
+                                            <span className="ant-descriptions-title">Matching offers </span>
+                                            <Button onClick={()=>this.getMatchingOffers(currentOffer.id)}>Fetch Matching offers</Button>
+                                            {exact && exact.length > 0 && <>
+                                                <br/> 
+                                                <span className="ant-descriptions-title">Exact</span>
+                                                <Table columns={singleMathingOffers} dataSource={exact}  pagination={{ defaultPageSize: 5}} />
+                                            </>}
+
+                                            {range && range.length > 0 &&<>
+                                                <br/>  
+                                                <span className="ant-descriptions-title">In Range</span>
+                                                <Table columns={singleMathingOffers} dataSource={range}  pagination={{ defaultPageSize: 5}} />
+                                            </>}
+
+                                            {/* {split && <> 
+                                                <br/>  
+                                                <span className="ant-descriptions-title">Split Offers</span>
+                                                <Table columns={splitMatchingOffers} dataSource={split}  pagination={{ defaultPageSize: 5}} />
+                                            </>} */}
                                         </div>
                                     </div>
                                 </div>
@@ -518,7 +668,15 @@ class Message extends Component {
                                 </Form.Item>
                             </Form>
                         </Modal>
-
+                        <Modal
+                            title="Post Counter offers"
+                            visible={this.state.matchingCounterOfferVisible}
+                            onCancel={async () => await this.setState({ matchingCounterOfferVisible: false, text: {} })}
+                            onOk={()=>this.postMatchingCounterOffer()}
+                            destroyOnClose={true}
+                        >
+                            <Input  name="counterOfferValue" value={this.state.counterOfferValue} onChange={(e)=>this.onInputChange(e)}/>
+                        </Modal>
                 
             </div>
         )
