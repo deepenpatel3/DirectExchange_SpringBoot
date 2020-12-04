@@ -19,7 +19,8 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and source_currency = :sourceCurrency", nativeQuery = true)
         Set<Offer> findOfferBySourceCurrency(@Param("id") long id, @Param("sourceCurrency") String sourceCurrency);
 
-        @Query(value = "Select * from Offer Where user_id = :id and counter_offer_or_not = 0", nativeQuery = true)
+//        @Query(value = "Select * from Offer Where user_id = :id and counter_offer_or_not = 0", nativeQuery = true)
+        @Query(value = "Select * from Offer Where user_id = :id", nativeQuery = true)
         Set<Offer> findOfferByUserId(@Param("id") long id);
 
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and accepted = 0", nativeQuery = true)
@@ -49,7 +50,7 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
         List<Offer> findSameMatchingOffer(@Param("id") long id, @Param("sourceCountry") String sourceCountry,
                         @Param("destinationCountry") String destinationCountry);
 
-        @Query(value = "Select * from Offer Where matching_offers_id= :id", nativeQuery = true)
+        @Query(value = "Select * from offer_matching_offers Where offer_id= :id", nativeQuery = true)
         List<Offer> findOfferOfMatchingOffer(@Param("id") long id);
 
         @Query(value = "Select * from Offer Where user_id != :id and status = 'open' and counter_offer_or_not = 0 and destination_currency = :destinationCurrency", nativeQuery = true)
