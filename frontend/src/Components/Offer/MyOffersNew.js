@@ -61,6 +61,7 @@ class Message extends Component {
         this.setState({
             currentIndex: index,
             currentOffer: this.state.allMyOffers[index],
+            matchingOffers : {}
         })
     }
 
@@ -145,7 +146,7 @@ class Message extends Component {
     }
 
     update = (text) => {
-        console.log(JSON.stringify(text))
+        console.log(text)
         this.setState({
             update: true,
             text: text
@@ -154,7 +155,7 @@ class Message extends Component {
 
     updateOffer = async (value) => {
         // this.setState({text : value})
-        let offer = {}
+        let offer = this.state.text;
         offer.amountToRemit = value["amount"]
         offer.exchangeRate = value["exchangeRate"]
         offer.expirationDate = value["expirationDate"]
@@ -219,11 +220,29 @@ class Message extends Component {
 
     }
 
+    acceptSplitMatchingOffer = async(offers)=>{
+        await this.acceptMatchingOffer(offers[0].id)
+        await this.acceptMatchingOffer(offers[1].id)
+    }
+
     selectMatchingOffer = (offer) => {
         this.setState({
             matchingCounterOffer: offer,
             matchingCounterOfferVisible: true
         })
+    }
+
+    pay= async(id)=>{
+        try {
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/transactionPay/${id}`,{})
+                .then(response => {
+                    message.success("Transaction successful");
+                    this.getOffers();
+                });
+        }
+        catch (e) {
+            message.error(e.message);
+        }
     }
     render() {
         const { currentOffer, matchingOffers } = this.state;
@@ -255,7 +274,7 @@ class Message extends Component {
                     text.accepted ? "Accepted" :
                         <Space size="middle">
                             <Button type="primary" onClick={() => { this.acceptCounterOffer(text.id) }} icon={<CheckOutlined />} />
-                            <Button type="danger" onClick={() => { this.deleteOffer(text.id) }} icon={<CloseOutlined />} />
+                            <Button type="danger" onClick={() => { this.deleteOffer(text) }} icon={<CloseOutlined />} />
                         </Space>
                 )
             }
@@ -312,30 +331,35 @@ class Message extends Component {
                 title: 'Accept',
                 key: 'action',
                 render: (text, record) => (
-                    <Button type="primary" onClick={() => { this.acceptMatchingOffer(text.id) }} icon={<CheckOutlined />} />
+                    <Button type="primary" onClick={() => { this.acceptSplitMatchingOffer(text.offers)}} icon={<CheckOutlined />} />
                 )
             },
             {
                 title: 'Counter Offer',
-                key: 'action',
+                key: 'counterOffer',
                 render: (text, record) => (
-                    <Button type="primary" onClick={() => { this.postCounterOffer(text.id) }}>Post</Button>
+                    <Space size="middle">
+                    <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[0]) }}>Against {text.offers[0].amountToRemit}</Button>
+                    <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[1]) }}>Against {text.offers[1].amountToRemit}</Button>
+                    </Space>
                 )
             }
         ]
         let exact = matchingOffers.Exact;
         let opposite = matchingOffers.Opposite;
         let range = matchingOffers.Range;
-        // let split = [];
-        // if(matchingOffers && matchingOffers.Split && matchingOffers.Split.length > 0){
-        //     matchingOffers.Split.forEach(offers => {
-        //         let obj= {};
-        //         obj.amountToRemit = offers[0].amountToRemit + "+" + offers[1].amountToRemit;
-        //         obj.exchangeRate = offers[0].exchangeRate ;
-        //         obj.ids = [offers[0].id , offers[1].id];
-        //         split.push(obj);
-        //     });
-        // }
+        let split = [];
+        if(matchingOffers && matchingOffers.Split && matchingOffers.Split.length > 0){
+            matchingOffers.Split.forEach(offers => {
+                if(offers.length==2){
+                    let obj= {};
+                    obj.amountToRemit = offers[0].amountToRemit + "+" + offers[1].amountToRemit;
+                    obj.exchangeRate = offers[0].exchangeRate ;
+                    obj.offers = offers;
+                    split.push(obj);
+                }
+            });
+        }
 
         return (
             <div >
@@ -409,6 +433,7 @@ class Message extends Component {
                                 <div className="settings-tray">
                                     <div style={{ float: "right" }}>
                                         <Space direction="horizontal">
+                                            {currentOffer.status=="inTransaction" && !currentOffer.sent && <Button type="success" onClick={() => { this.pay(currentOffer.id) }}> Pay </Button>}
                                             <Button type="primary" onClick={() => { this.update(currentOffer) }}> Edit </Button>
                                             <Button type="danger" onClick={() => { this.deleteOffer(currentOffer) }} > Delete </Button>
                                         </Space>
@@ -429,16 +454,19 @@ class Message extends Component {
                                             <Descriptions title="Offer details" bordered>
                                                 <Descriptions.Item label="Ammount to Remit">{currentOffer.amountToRemit}</Descriptions.Item>
                                                 <Descriptions.Item label="Source Currency">{currentOffer.sourceCurrency}</Descriptions.Item>
-                                                <Descriptions.Item label="Source Country">{currentOffer.sourceCurrency}</Descriptions.Item>
-                                                <Descriptions.Item label="Destination Currency">{currentOffer.destinationCountry}</Descriptions.Item>
+                                                <Descriptions.Item label="Source Country">{currentOffer.sourceCountry}</Descriptions.Item>
+                                                <Descriptions.Item label="Destination Currency">{currentOffer.destinationCurrency}</Descriptions.Item>
                                                 <Descriptions.Item label="Destination Country">
                                                     {currentOffer.destinationCountry}
                                                 </Descriptions.Item>
                                                 <Descriptions.Item label="Expiration Date">
                                                     {currentOffer.expirationDate}
                                                 </Descriptions.Item>
-                                                <Descriptions.Item label="Status" span={2}>
+                                                <Descriptions.Item label="Status">
                                                     <Badge status={currentOffer.accepted ? "success" : "processing"} text={currentOffer.accepted ? "Accepted" : "Pending"} />
+                                                </Descriptions.Item>
+                                                <Descriptions.Item label="Remaining amount">
+                                                    {currentOffer.remainingBalance}
                                                 </Descriptions.Item>
                                                 <Descriptions.Item label="Exchange rate">{currentOffer.exchangeRate}</Descriptions.Item>
                                             </Descriptions>
@@ -459,11 +487,11 @@ class Message extends Component {
                                                 <Table columns={singleMathingOffers} dataSource={range} pagination={{ defaultPageSize: 5 }} />
                                             </>}
 
-                                            {/* {split && <> 
+                                            {split && split.length > 0 &&<> 
                                                 <br/>  
                                                 <span className="ant-descriptions-title">Split Offers</span>
                                                 <Table columns={splitMatchingOffers} dataSource={split}  pagination={{ defaultPageSize: 5}} />
-                                            </>} */}
+                                            </>}
                                         </div>
                                     </div>
                                 </div>
@@ -675,8 +703,8 @@ class Message extends Component {
                             amount: this.state.text["amountToRemit"],
                             exchangeRate: this.state.text['exchangeRate'],
                             expirationDate: this.state.text['expirationDate'],
-                            splitOffers: this.state.text['splitOffers'],
-                            counterOffers: this.state.text['counterOffers'],
+                            splitOffers: this.state.text['allowSplitExchange'],
+                            counterOffers: this.state.text['allowCounterOffer'],
 
                         }}
                         onFinish={this.updateOffer}
@@ -721,14 +749,14 @@ class Message extends Component {
                                 },
                             ]}
                         >
-                            <Input />
+                             <Input />
                         </Form.Item>
 
                         <Form.Item {...tailLayout} name="splitOffers" valuePropName="checked" >
-                            <Checkbox checked="checked">Split Offer</Checkbox>
+                            <Checkbox>Split Offer</Checkbox>
                         </Form.Item>
                         <Form.Item {...tailLayout} name="counterOffers" valuePropName="checked">
-                            <Checkbox checked="true">Counter Offer</Checkbox>
+                            <Checkbox>Counter Offer</Checkbox>
                         </Form.Item>
                     </Form>
                 </Modal>
