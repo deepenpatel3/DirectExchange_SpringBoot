@@ -6,6 +6,8 @@ export const logout = async () => {
     localStorage.removeItem("nickname");
     localStorage.removeItem("username");
     localStorage.removeItem("user");
+    localStorage.removeItem("displayName");
+
 }
 
 export const login = (user) => {
@@ -15,6 +17,7 @@ export const login = (user) => {
     localStorage.setItem("uid", user.uid);
     localStorage.setItem("nickname", user.nickname);
     localStorage.setItem("username", user.username);
+    localStorage.setItem("displayName", user.displayName);
 }
 
 export const getloggedInUser = () => {
@@ -24,7 +27,8 @@ export const getloggedInUser = () => {
             uid: localStorage.getItem("uid"),
             nickname: localStorage.getItem("nickname"),
             username: localStorage.getItem("username"),
-            user: localStorage.getItem("user")
+            user: localStorage.getItem("user"),
+            displayName:  localStorage.getItem("displayName")
         }
         return user;
     }

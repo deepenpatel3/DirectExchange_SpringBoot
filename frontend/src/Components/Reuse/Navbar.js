@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Menu, Layout } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { logout } from '../../helpers/authHelper';
+import { logout , getloggedInUser } from '../../helpers/authHelper';
 import { Link } from 'react-router-dom';
 const { Header } = Layout;
 const { SubMenu } = Menu;
@@ -18,7 +18,7 @@ class Navbar extends Component {
       <Header >
         <div className="logo"><i>Direct Exchange</i></div>
         <Menu theme="dark" mode="horizontal" selectedKeys={[selectedKey]} defaultSelectedKeys={["1"]}>
-          <SubMenu key="SubMenu" style={{ float: "right" }} icon={<UserOutlined />} title="Profile">
+          <SubMenu key="SubMenu" style={{ float: "right" }} icon={<UserOutlined />} title={getloggedInUser().displayName}>
             <Menu.Item key="profile:1"><Link to="/myOffers">My Offers</Link></Menu.Item>
             <Menu.Item key="profile:2"><Link to="/accounts">My Bank Accounts</Link></Menu.Item>
             <Menu.Item key="profile:3"><Link to="/transactionHistory">My Transaction History</Link></Menu.Item>
