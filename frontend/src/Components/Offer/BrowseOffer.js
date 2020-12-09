@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import axios from "axios";
 import Navbar from "../Reuse/Navbar";
-import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider } from 'antd';
+import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider, Tooltip } from 'antd';
 import { Link } from "react-router-dom";
 import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, SmileTwoTone } from '@ant-design/icons';
 const { Header, Footer, Sider, Content } = Layout;
@@ -16,7 +16,13 @@ export default class BrowseOffer extends Component {
             allOffers: [],
             selectedOffer: {},
             allMyOffers: [],
-            holdOfferId: Number()
+            holdOfferId: Number(),
+            selectedSourceCurrency: "",
+            selectedDestinationCurrency: "",
+            lowestSourceCurrencyAmount: Number.MAX_VALUE,
+            highestSourceCurrencyAmount: Number.MIN_VALUE,
+            lowestDestinationCurrencyAmount: Number.MAX_VALUE,
+            highestDestinationCurrencyAmount: Number.MIN_VALUE,
         }
     }
 
@@ -35,8 +41,11 @@ export default class BrowseOffer extends Component {
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
                     console.log("allOffers ", allOffers);
+                    let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
+                    console.log("lowest ", lowestSourceCurrencyAmount);
+
                     console.log("first offer ", selectedOffer);
-                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedSourceCurrency: "", selectedDestinationCurrency: "" });
                 }
             })
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
@@ -105,17 +114,27 @@ export default class BrowseOffer extends Component {
     filterBySourceCurrency = (value) => {
         console.log("in filter source currency", value);
         if (value == undefined) {
+
             this.getOffers();
         }
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrency/${localStorage.getItem("id")}/${value}`)
             .then(response => {
                 // console.log("allOffers ", response.data);
                 let allOffers = response.data;
+
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
                     console.log("allOffers ", allOffers);
                     console.log("first offer ", selectedOffer);
-                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                    let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
+                    let highestSourceCurrencyAmount = this.state.highestSourceCurrencyAmount;
+                    allOffers.forEach(offer => {
+                        if (offer.amountToRemit < lowestSourceCurrencyAmount)
+                            lowestSourceCurrencyAmount = offer.amountToRemit
+                        if (offer.amountToRemit > highestSourceCurrencyAmount)
+                            highestSourceCurrencyAmount = offer.amountToRemit
+                    })
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedSourceCurrency: value, highestSourceCurrencyAmount: highestSourceCurrencyAmount, lowestSourceCurrencyAmount: lowestSourceCurrencyAmount });
                 }
                 else {
                     this.setState({ allOffers: allOffers, selectedOffer: {} });
@@ -135,7 +154,15 @@ export default class BrowseOffer extends Component {
                     let selectedOffer = allOffers[0];
                     console.log("allOffers ", allOffers);
                     console.log("first offer ", selectedOffer);
-                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                    let lowestDestinationCurrencyAmount = this.state.lowestDestinationCurrencyAmount;
+                    let highestDestinationCurrencyAmount = this.state.highestDestinationCurrencyAmount;
+                    allOffers.forEach(offer => {
+                        if (offer.amountToRemit * offer.exchangeRate < lowestDestinationCurrencyAmount)
+                            lowestDestinationCurrencyAmount = offer.amountToRemit * offer.exchangeRate
+                        if (offer.amountToRemit * offer.exchangeRate > highestDestinationCurrencyAmount)
+                            highestDestinationCurrencyAmount = offer.amountToRemit * offer.exchangeRate
+                    })
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedDestinationCurrency: value, lowestDestinationCurrencyAmount: lowestDestinationCurrencyAmount, highestDestinationCurrencyAmount: highestDestinationCurrencyAmount });
                 }
                 else {
                     this.setState({ allOffers: allOffers, selectedOffer: {} });
@@ -147,40 +174,42 @@ export default class BrowseOffer extends Component {
         // if (value == undefined) {
         //     this.getOffers();
         // }
-        // axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrency/${localStorage.getItem("id")}/${value}`)
-        //     .then(response => {
-        //         // console.log("allOffers ", response.data);
-        //         let allOffers = response.data;
-        //         if (allOffers.length > 0) {
-        //             let selectedOffer = allOffers[0];
-        //             console.log("allOffers ", allOffers);
-        //             console.log("first offer ", selectedOffer);
-        //             this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
-        //         }
-        //         else {
-        //             this.setState({ allOffers: allOffers, selectedOffer: {} });
-        //         }
-        //     })
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrencyAmount/${localStorage.getItem("id")}/${this.state.selectedSourceCurrency}/${value[0]}/${value[1]}`)
+            .then(response => {
+                // console.log("allOffers ", response.data);
+                let allOffers = response.data;
+                console.log("filtered offers ", allOffers);
+                // if (allOffers.length > 0) {
+                //     let selectedOffer = allOffers[0];
+                //     console.log("allOffers ", allOffers);
+                //     console.log("first offer ", selectedOffer);
+                //     this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                // }
+                // else {
+                //     this.setState({ allOffers: allOffers, selectedOffer: {} });
+                // }
+            })
     }
     filterByDestinationCurrencyAmount = (value) => {
         console.log("in filter destination currency amount", value);
         // if (value == undefined) {
         //     this.getOffers();
         // }
-        // axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrency/${localStorage.getItem("id")}/${value}`)
-        //     .then(response => {
-        //         // console.log("allOffers ", response.data);
-        //         let allOffers = response.data;
-        //         if (allOffers.length > 0) {
-        //             let selectedOffer = allOffers[0];
-        //             console.log("allOffers ", allOffers);
-        //             console.log("first offer ", selectedOffer);
-        //             this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
-        //         }
-        //         else {
-        //             this.setState({ allOffers: allOffers, selectedOffer: {} });
-        //         }
-        //     })
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrencyAmount/${localStorage.getItem("id")}/ ${this.state.selectedDestinationCurrency}/${value[0]}/${value[1]}`)
+            .then(response => {
+                // console.log("allOffers ", response.data);
+                let allOffers = response.data;
+                console.log("filtered offers ", allOffers);
+                // if (allOffers.length > 0) {
+                //     let selectedOffer = allOffers[0];
+                //     console.log("allOffers ", allOffers);
+                //     console.log("first offer ", selectedOffer);
+                //     this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                // }
+                // else {
+                //     this.setState({ allOffers: allOffers, selectedOffer: {} });
+                // }
+            })
     }
     acceptOffer = (values) => {
         console.log("accept values ", values);
@@ -227,6 +256,9 @@ export default class BrowseOffer extends Component {
             })
     }
     render() {
+        console.log("sc ", this.state.selectedSourceCurrency, " dc ", this.state.selectedDestinationCurrency);
+        console.log("lowest sc ", this.state.lowestSourceCurrencyAmount, " highest sc amount: ", this.state.highestSourceCurrencyAmount);
+        console.log("lowest dc ", this.state.lowestDestinationCurrencyAmount, " highest dc amount: ", this.state.highestDestinationCurrencyAmount);
         return (
             <div>
                 <Navbar />
@@ -270,18 +302,32 @@ export default class BrowseOffer extends Component {
                                     </Select>
                                 </Form.Item>
                             </Form>
-                        Source currency amount<Slider
+
+                            {this.state.selectedSourceCurrency === "" ? <Tooltip title="Please select a source currency first">Source currency amount<Slider
                                 style={{ width: "150px" }}
                                 range
-                                defaultValue={[20, 50]}
+                                disabled
+                            /></Tooltip> : <>Source currency amount<Slider
+                                style={{ width: "150px" }}
+                                range
+                                defaultValue={[this.state.lowestSourceCurrencyAmount, this.state.highestSourceCurrencyAmount]}
+                                max={this.state.highestSourceCurrencyAmount}
+                                min={this.state.lowestSourceCurrencyAmount}
                                 onAfterChange={this.filterBySourceCurrencyAmount}
-                            />
-                            Destination currency amount<Slider
+                            /></>}
+                            {this.state.selectedDestinationCurrency === "" ? <Tooltip title="Please select a destination currency first">Destination Currency amount<Slider
                                 style={{ width: "150px" }}
                                 range
-                                defaultValue={[20, 50]}
+                                disabled
+                            /></Tooltip> : <>Destination currency amount<Slider
+                                style={{ width: "150px" }}
+                                range
+                                defaultValue={[this.state.lowestDestinationCurrencyAmount, this.state.highestDestinationCurrencyAmount]}
+                                min={this.state.lowestDestinationCurrencyAmount}
+                                max={this.state.highestDestinationCurrencyAmount}
                                 onAfterChange={this.filterByDestinationCurrencyAmount}
-                            />
+                            /></>}
+
                         </Row>
                         <Layout title="Browse Offers">
                             <Sider theme="light" width={350}>

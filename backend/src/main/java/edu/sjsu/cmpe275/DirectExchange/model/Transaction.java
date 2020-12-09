@@ -10,22 +10,21 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "Transacation")
-public class Transaction implements Serializable{
+public class Transaction implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer" ,"mainOffer"})
-	@JoinColumn(name = "offer", nullable = false)
+	@JsonIgnoreProperties({ "matchingOffer", "mainOffer" })
+	@JoinColumn(name = "main_offer", nullable = false)
 	private Offer mainOffer;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer" ,"mainOffer"})
-	@JoinColumn(name = "offer", nullable = false)
+	@JsonIgnoreProperties({ "matchingOffer", "mainOffer" })
+	@JoinColumn(name = "other_offer", nullable = false)
 	private Offer otherOffer;
 
-	
 	@Column(nullable = false)
 	private Date transactionExpirationDate;
 
@@ -35,31 +34,25 @@ public class Transaction implements Serializable{
 	@Column(nullable = false)
 	private Boolean paid = false;
 
-
 	public Offer getMainOffer() {
 		return mainOffer;
 	}
-
 
 	public void setMainOffer(Offer mainOffer) {
 		this.mainOffer = mainOffer;
 	}
 
-
 	public Offer getOtherOffer() {
 		return otherOffer;
 	}
-
 
 	public void setOtherOffer(Offer otherOffer) {
 		this.otherOffer = otherOffer;
 	}
 
-
 	public Boolean getPaid() {
 		return paid;
 	}
-
 
 	public void setPaid(Boolean paid) {
 		this.paid = paid;

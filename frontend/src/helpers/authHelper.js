@@ -8,6 +8,7 @@ export const logout = async () => {
     localStorage.removeItem("user");
     localStorage.removeItem("displayName");
 
+    localStorage.removeItem("numOfAccounts");
 }
 
 export const login = (user) => {
@@ -28,7 +29,7 @@ export const getloggedInUser = () => {
             nickname: localStorage.getItem("nickname"),
             username: localStorage.getItem("username"),
             user: localStorage.getItem("user"),
-            displayName:  localStorage.getItem("displayName")
+            displayName: localStorage.getItem("displayName")
         }
         return user;
     }
