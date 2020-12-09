@@ -42,6 +42,13 @@ public class OfferService {
         return offerRepository.findExactMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
     }
 
+    public List<Offer> getAllOfferBySourceCurrencyAmount(long id, String sourceCurrency, float min, float max) {
+        return offerRepository.findOfferBySourceCurrencyAmount(id, sourceCurrency, min, max);
+    }
+    public List<Offer> getAllOfferByDestinationCurrencyAmount(long id, String destinationCurrency, float min, float max) {
+        return offerRepository.findOfferByDestinationCurrencyAmount(id, destinationCurrency, min, max);
+    }
+
     public List<Offer> getAllRangeMatchingOffer(long id, float matchingAmount, String sourceCountry,
             String destinationCountry) {
         return offerRepository.findRangeMatchingOffer(id, matchingAmount, sourceCountry, destinationCountry);
@@ -76,5 +83,4 @@ public class OfferService {
     public void deleteOffer(long id) {
         offerRepository.deleteById(id);
     }
-
 }
