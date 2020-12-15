@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
 import edu.sjsu.cmpe275.DirectExchange.model.Offer;
@@ -32,15 +33,19 @@ public class TransactionService {
     }
 
     public List<Transaction> getMainOffers(Offer offer) {
-        return transactionRepository.findTransactionByMainOffer(offer);
+        return transactionRepository.findTransactionByMainOfferId(offer.getId());
     }
 
-    public List<Transaction> getOtherOffers(Offer offer) {
-        return transactionRepository.findTransactionByOtherOffer(offer);
-    }
+    // public List<Transaction> getOtherOffers(Offer offer) {
+    // return transactionRepository.findTransactionByOtherOffer(offer);
+    // }
 
     public Transaction addTransaction(Transaction transaction) {
         return transactionRepository.save(transaction);
     }
+
+    // public List<Transaction> getSystemReport() {
+    // return transactionRepository.getSystemReport();
+    // }
 
 }

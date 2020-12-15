@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -171,7 +173,7 @@ public class TransactionController {
 		return null;
 	}
 
-	@GetMapping(value = "transactionHistory/{id}")
+	@GetMapping(value = "/transactionHistory/{id}")
 	public ResponseEntity<?> transactionHistory(@PathVariable long id) {
 		System.out.println("getting transaction history of a user -> " + id);
 		List<Transaction> allTransactions = transactionService.getAllTransaction();
@@ -184,7 +186,81 @@ public class TransactionController {
 				filteredTransactions.add(transaction);
 			}
 		}
-
 		return new ResponseEntity<>(filteredTransactions, HttpStatus.OK);
+	}
+
+	@GetMapping(value = "/systemReport")
+	public ResponseEntity<?> getSystemReport() {
+		System.out.println("getting all transactions");
+		List<Transaction> allTransactions = transactionService.getAllTransaction();
+
+		int completedTransactions = 0, uncompletedTransactions = 0;
+		float remittedAmount = 0;
+		float serviceFee = 0;
+		Set<Long> ids = new HashSet<>();
+
+		HashMap<String, Float> rates = new HashMap<String, Float>();
+
+		rates.put("EUR", (float) 1.21269);
+		rates.put("GBP", (float) 1.331166);
+		rates.put("INR", (float) 0.01355);
+		rates.put("RMB", (float) 0.152953);
+
+		for (Transaction transaction : allTransactions) {
+			// Transaction transaction;
+			System.out.println("transaction " + transaction.getId());
+			// System.out.println(
+			// "not " + !ids.contains(transaction.getMainOffer().getId()) + " status " +
+			// transaction.getStatus());
+			// System.out.println("condition " +
+			// (!ids.contains(transaction.getMainOffer().getId())
+			// && (transaction.getStatus() == "at-fault" || transaction.getStatus() ==
+			// "completed")));
+			// System.out.println("cond "
+			// + (transaction.getStatus().equals("at-fault") ||
+			// transaction.getStatus().equals("completed")));
+			if (!ids.contains(transaction.getMainOffer().getId())
+					&& (transaction.getStatus().equals("at-fault") || transaction.getStatus().equals("completed"))) {
+				ids.add(transaction.getMainOffer().getId());
+				if (transaction.getStatus().equals("completed")) {
+					System.out.println("inside completed");
+					completedTransactions++;
+					Offer mainOffer = transaction.getMainOffer();
+					List<Transaction> list = transactionService.getMainOffers(mainOffer);
+					if (transaction.getMainOffer().getSourceCurrency().equals("USD")) {
+						remittedAmount += transaction.getMainOffer().getAmountToRemit();
+					} else if (transaction.getMainOffer().getDestinationCurrency().equals("USD")) {
+						remittedAmount += transaction.getMainOffer().getAmountToRemit()
+								* (transaction.getMainOffer().getExchangeRate());
+					} else {
+						remittedAmount += transaction.getMainOffer().getAmountToRemit()
+								* rates.get(transaction.getMainOffer().getSourceCurrency());
+					}
+					for (Transaction t : list) {
+						System.out.println("inside t");
+						if (t.getMainOffer().getSourceCurrency().equals("USD")) {
+							remittedAmount += (t.getOtherOffer().getAmountToRemit())
+									* (t.getOtherOffer().getExchangeRate());
+						} else if (t.getMainOffer().getDestinationCurrency().equals("USD")) {
+							remittedAmount += t.getOtherOffer().getAmountToRemit();
+						} else {
+							remittedAmount += t.getOtherOffer().getAmountToRemit()
+									* rates.get(t.getMainOffer().getSourceCurrency());
+						}
+					}
+				} else {
+					uncompletedTransactions++;
+				}
+
+			}
+		}
+		serviceFee = (float) (remittedAmount * (0.0005));
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		result.put("completed", completedTransactions);
+		result.put("unCompleted", uncompletedTransactions);
+		result.put("remittedAmount", remittedAmount);
+		result.put("serviceFee", serviceFee);
+
+		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 }
