@@ -9,6 +9,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class Offer implements Serializable {
 
 	@Id
+	@Column(name = "id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
@@ -73,22 +76,25 @@ public class Offer implements Serializable {
 	// @JoinTable(name = "matchingOffer", joinColumns = { @JoinColumn(name =
 	// "offer_id") }, inverseJoinColumns = {
 	// @JoinColumn(name = "matching_offer_id") })
-	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer", "holdOffer" })
 	@OneToMany
+	@JoinTable(name = "offer_matching_offers", joinColumns = {
+			@JoinColumn(name = "offer_id", referencedColumnName = "id") }, inverseJoinColumns = {
+					@JoinColumn(name = "matching_offers_id", referencedColumnName = "id", unique = true) })
 	private Set<Offer> matchingOffers;
 
 	@Column(nullable = false)
 	private boolean counterOfferOrNot = false;
 
-	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer", "holdOffer" })
 	@OneToMany(mappedBy = "parentOffer")
 	private Set<Offer> counterOffers;
 
-	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer", "holdOffer" })
 	@ManyToOne()
 	private Offer parentOffer;
-	
-	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer" ,"holdOffer"})
+
+	@JsonIgnoreProperties({ "counterOffers", "matchingOffers", "parentOffer", "holdOffer" })
 	@OneToOne()
 	private Offer holdOffer;
 

@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
+
+import java.io.IOException;
+
 // import javax.persistence.Tuple;
 
 import java.time.Instant;
@@ -34,6 +39,7 @@ import edu.sjsu.cmpe275.DirectExchange.model.Offer;
 import edu.sjsu.cmpe275.DirectExchange.model.BankAccount;
 import edu.sjsu.cmpe275.DirectExchange.service.TransactionService;
 import edu.sjsu.cmpe275.DirectExchange.service.BankAccountService;
+import edu.sjsu.cmpe275.DirectExchange.service.EmailService;
 import edu.sjsu.cmpe275.DirectExchange.service.OfferService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,13 +59,17 @@ public class OfferController {
 	@Autowired
 	TransactionService transactionService;
 
-	public Boolean checkExpired(long id){
+	@Autowired
+	EmailService emailService;
+
+	public Boolean checkExpired(long id) {
 		boolean bool = false;
 
 		Offer offer = offerService.getOfferById(id).get();
 		Date expirationDate = offer.getExpirationDate();
-		Date now  = new Date();
-		if(now.compareTo(expirationDate) > 0){
+		expirationDate.setHours(expirationDate.getHours() + 8);
+		Date now = new Date();
+		if (now.compareTo(expirationDate) > 0) {
 			bool = true;
 			offer.setStatus("expired");
 			offerService.addOffer(offer);
@@ -91,8 +101,10 @@ public class OfferController {
 	public ResponseEntity<?> deleteOffer(@PathVariable long offerId, @PathVariable Optional<Long> mainOfferId) {
 		System.out.println("deleting an offer -> " + offerId);
 		boolean checkCounterOffer = checkExpired(offerId);
-		boolean checkMainOffer = checkExpired(mainOfferId.get());
-		if(checkCounterOffer == true|| checkMainOffer == true ){
+		boolean checkMainOffer = false;
+		if (mainOfferId.isPresent())
+			checkMainOffer = checkExpired(mainOfferId.get());
+		if (checkCounterOffer == true || checkMainOffer == true) {
 			return new ResponseEntity<>("Cannot reject, Offer Expired", HttpStatus.OK);
 		}
 		Optional<Offer> mainOffer = offerService.getOfferById(offerId);
@@ -121,15 +133,15 @@ public class OfferController {
 	public ResponseEntity<?> postCounterOffer(@RequestBody Offer offer, @PathVariable long mainOfferId,
 			@PathVariable Optional<Long> holdOfferId) {
 		System.out.println("posting counter offer -> ");
-		
-		if(holdOfferId.isPresent()){
+
+		if (holdOfferId.isPresent()) {
 			boolean checkHoldOffer = checkExpired(holdOfferId.get());
-			if(checkHoldOffer == true ){
+			if (checkHoldOffer == true) {
 				return new ResponseEntity<>("Cannot add, Offer Expired", HttpStatus.OK);
-			}	
+			}
 		}
 		boolean checkMainOffer = checkExpired(mainOfferId);
-		if(checkMainOffer == true ){
+		if (checkMainOffer == true) {
 			return new ResponseEntity<>("Cannot add, Offer Expired", HttpStatus.OK);
 		}
 
@@ -187,15 +199,18 @@ public class OfferController {
 	}
 
 	@PostMapping(value = "/offer/matchingOffer/{mainOfferId}")
-	public ResponseEntity<?> acceptMatchingOffer(@RequestBody Offer offer, @PathVariable long mainOfferId) {
+	public ResponseEntity<?> acceptMatchingOffer(@RequestBody Offer offer, @PathVariable long mainOfferId)
+			throws AddressException, MessagingException, IOException {
 		System.out.println("posting matching offer -> ");
 
-		boolean checkOtherOffer = checkExpired(offer.getId());
+		// boolean checkOtherOffer = checkExpired(offer.getId());
 		boolean checkMainOffer = checkExpired(mainOfferId);
-		if(checkOtherOffer == true || checkMainOffer == true ){
+		if (checkMainOffer == true) {
 			return new ResponseEntity<>("Cannot accept, Offer Expired", HttpStatus.OK);
 		}
-
+		// if (checkOtherOffer == true || checkMainOffer == true) {
+		// return new ResponseEntity<>("Cannot accept, Offer Expired", HttpStatus.OK);
+		// }
 
 		Offer mainOffer = offerService.getOfferById(mainOfferId).get();
 		// if (referenceOfferId.isPresent()) {
@@ -239,14 +254,21 @@ public class OfferController {
 
 		long minutes = 10;
 		long hours = 8;
-		transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+		transaction.setTransactionExpirationDate(
+				Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 		transactionService.addTransaction(transaction);
+		System.out.println("sending emails");
+		emailService.sendmail("directexchange.cmpe275@gmail.com", mainOffer.getUser().getUsername(),
+				"Offer accepted, Please complete the transaction in My Offers tab");
+		emailService.sendmail("directexchange.cmpe275@gmail.com", offer.getUser().getUsername(),
+				"Offer accepted, Please complete the transaction in My Offers tab");
 		return new ResponseEntity<>("Offer matched", HttpStatus.OK);
 	}
 
 	@PostMapping(value = "/offer/counterOffer/accept/{counterOfferId}")
-	public ResponseEntity<?> acceptCounterOffer(@PathVariable long counterOfferId) {
+	public ResponseEntity<?> acceptCounterOffer(@PathVariable long counterOfferId)
+			throws AddressException, MessagingException, IOException {
 		System.out.println("accepting counter offer -> " + counterOfferId);
 
 		Offer counterOffer = offerService.getOfferById(counterOfferId).get();
@@ -254,7 +276,7 @@ public class OfferController {
 
 		boolean checkCounterOffer = checkExpired(counterOfferId);
 		boolean checkMainOffer = checkExpired(parentOffer.getId());
-		if(checkCounterOffer == true || checkMainOffer == true ){
+		if (checkCounterOffer == true || checkMainOffer == true) {
 			return new ResponseEntity<>("Cannot accept, Offer Expired", HttpStatus.OK);
 		}
 
@@ -280,12 +302,13 @@ public class OfferController {
 				Offer previousOffer = matchingOffers.iterator().next();
 				previousOffer.setStatus("inTransaction");
 				offerService.addOffer(previousOffer);
-				previousOfferTransaction.setOtherOffer(previousOffer);				
-				
+				previousOfferTransaction.setOtherOffer(previousOffer);
+
 				long minutes = 10;
 				long hours = 8;
-				previousOfferTransaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+				previousOfferTransaction.setTransactionExpirationDate(
+						Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 				transactionService.addTransaction(previousOfferTransaction);
 
 				counterOffer.setAccepted(true);
@@ -301,9 +324,17 @@ public class OfferController {
 				transaction.setMainOffer(parentOffer);
 				transaction.setOtherOffer(counterOffer);
 
-				transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+				transaction.setTransactionExpirationDate(
+						Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 				transactionService.addTransaction(transaction);
+				// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				emailService.sendmail("directexchange.cmpe275@gmail.com", parentOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+				emailService.sendmail("directexchange.cmpe275@gmail.com", counterOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+				emailService.sendmail("directexchange.cmpe275@gmail.com", previousOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
 				return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
 			} else {
 				if ((parentOffer.getAmountToRemit() * 0.1) + remainingBal < counterOffer.getAmountToRemit()) {
@@ -330,9 +361,15 @@ public class OfferController {
 
 					long minutes = 10;
 					long hours = 8;
-					transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));	
+					transaction.setTransactionExpirationDate(
+							Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
 
 					transactionService.addTransaction(transaction);
+					// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+					emailService.sendmail("directexchange.cmpe275@gmail.com", parentOffer.getUser().getUsername(),
+							"Offer accepted, Please complete the transaction in My Offers tab");
+					emailService.sendmail("directexchange.cmpe275@gmail.com", counterOffer.getUser().getUsername(),
+							"Offer accepted, Please complete the transaction in My Offers tab");
 				}
 				offerService.addOffer(parentOffer);
 				offerService.addOffer(counterOffer);
@@ -360,12 +397,18 @@ public class OfferController {
 			Transaction transaction = new Transaction();
 			transaction.setMainOffer(parentOffer);
 			transaction.setOtherOffer(counterOffer);
-			
+
 			long minutes = 10;
 			long hours = 8;
-			transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-	
+			transaction.setTransactionExpirationDate(
+					Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 			transactionService.addTransaction(transaction);
+			// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			emailService.sendmail("directexchange.cmpe275@gmail.com", parentOffer.getUser().getUsername(),
+					"Offer accepted, Please complete the transaction in My Offers tab");
+			emailService.sendmail("directexchange.cmpe275@gmail.com", counterOffer.getUser().getUsername(),
+					"Offer accepted, Please complete the transaction in My Offers tab");
 			return new ResponseEntity<>("Offer accepted", HttpStatus.OK);
 		}
 
@@ -391,14 +434,15 @@ public class OfferController {
 	}
 
 	@PostMapping(value = "/offer/otherOffer/{mainOfferId}/{otherOfferId}")
-	public ResponseEntity<?> addPostedOffers(@PathVariable long mainOfferId, @PathVariable long otherOfferId) {
+	public ResponseEntity<?> addPostedOffers(@PathVariable long mainOfferId, @PathVariable long otherOfferId)
+			throws AddressException, MessagingException, IOException {
 		System.out.println("addposted offers called");
 		Offer mainOffer = offerService.getOfferById(mainOfferId).get();
 		Offer otherOffer = offerService.getOfferById(otherOfferId).get();
 
 		boolean checkOtherOffer = checkExpired(otherOfferId);
 		boolean checkMainOffer = checkExpired(mainOfferId);
-		if(checkOtherOffer == true || checkMainOffer == true ){
+		if (checkOtherOffer == true || checkMainOffer == true) {
 			return new ResponseEntity<>("Cannot add, Offer Expired", HttpStatus.OK);
 		}
 
@@ -441,11 +485,12 @@ public class OfferController {
 				previousOffer.setStatus("inTransaction");
 				offerService.addOffer(previousOffer);
 				previousOfferTransaction.setOtherOffer(previousOffer);
-				
+
 				long minutes = 10;
 				long hours = 8;
-				previousOfferTransaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+				previousOfferTransaction.setTransactionExpirationDate(
+						Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 				transactionService.addTransaction(previousOfferTransaction);
 
 				matchingOffers.add(otherOffer);
@@ -462,9 +507,18 @@ public class OfferController {
 				transaction.setMainOffer(mainOffer);
 				transaction.setOtherOffer(otherOffer);
 
-				transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+				transaction.setTransactionExpirationDate(
+						Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 				transactionService.addTransaction(transaction);
+				// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				emailService.sendmail("directexchange.cmpe275@gmail.com", mainOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+				emailService.sendmail("directexchange.cmpe275@gmail.com", otherOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+				emailService.sendmail("directexchange.cmpe275@gmail.com", previousOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+
 				return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 			} else {
 				System.out.println("otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate() "
@@ -494,12 +548,17 @@ public class OfferController {
 					Transaction transaction = new Transaction();
 					transaction.setMainOffer(mainOffer);
 					transaction.setOtherOffer(otherOffer);
-					
 					long minutes = 10;
 					long hours = 8;
-					transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-			
+					transaction.setTransactionExpirationDate(
+							Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 					transactionService.addTransaction(transaction);
+					// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+					emailService.sendmail("directexchange.cmpe275@gmail.com", mainOffer.getUser().getUsername(),
+							"Offer accepted, Please complete the transaction in My Offers tab");
+					emailService.sendmail("directexchange.cmpe275@gmail.com", otherOffer.getUser().getUsername(),
+							"Offer accepted, Please complete the transaction in My Offers tab");
 					return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 				}
 				matchingOffers.add(otherOffer);
@@ -507,6 +566,7 @@ public class OfferController {
 						remainingBal - (otherOffer.getAmountToRemit() * (otherOffer.getExchangeRate())));
 				otherOffer.setRemainingBalance(0);
 				otherOffer.setAccepted(true);
+				otherOffer.setStatus("accepted");
 				offerService.addOffer(otherOffer);
 				offerService.addOffer(mainOffer);
 				return new ResponseEntity<>("Offer Added", HttpStatus.OK);
@@ -535,12 +595,18 @@ public class OfferController {
 				Transaction transaction = new Transaction();
 				transaction.setMainOffer(mainOffer);
 				transaction.setOtherOffer(otherOffer);
-				
+
 				long minutes = 10;
 				long hours = 8;
-				transaction.setTransactionExpirationDate(Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
-		
+				transaction.setTransactionExpirationDate(
+						Date.from(Instant.now().minus(hours, ChronoUnit.HOURS).plus(minutes, ChronoUnit.MINUTES)));
+
 				transactionService.addTransaction(transaction);
+				// ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				emailService.sendmail("directexchange.cmpe275@gmail.com", mainOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
+				emailService.sendmail("directexchange.cmpe275@gmail.com", otherOffer.getUser().getUsername(),
+						"Offer accepted, Please complete the transaction in My Offers tab");
 				return new ResponseEntity<>("Offer Fulfilled, Please Complete the transaction", HttpStatus.OK);
 			}
 		}
@@ -563,17 +629,21 @@ public class OfferController {
 
 	@GetMapping("/getAllOfferOfDestinationCurrencyAmount/{id}/{destinationCurrency}/{min}/{max}")
 	public ResponseEntity<?> getOffersByDestinationCurrency(@PathVariable long id,
-			@PathVariable String destinationCurrency,@PathVariable float min, @PathVariable float max) {
-		System.out.println("get offers by destination currency amount-> " + destinationCurrency);
-		List<Offer> offers = offerService.getAllOfferByDestinationCurrencyAmount(id, destinationCurrency,min,max);
+			@PathVariable String destinationCurrency, @PathVariable float min, @PathVariable float max) {
+		System.out.println("get offers by destination currency amount-> " + (float) Math.ceil(min) + " - "
+				+ (float) Math.ceil(max));
+		List<Offer> offers = offerService.getAllOfferByDestinationCurrencyAmount(id, destinationCurrency,
+				(float) Math.ceil(min), (float) Math.ceil(max));
 		return new ResponseEntity<>(offers, HttpStatus.OK);
 	}
 
 	@GetMapping("/getAllOfferOfSourceCurrencyAmount/{id}/{sourceCurrency}/{min}/{max}")
-	public ResponseEntity<?> getOffersBySourceCurrency(@PathVariable long id,
-			@PathVariable String sourceCurrency,@PathVariable float min, @PathVariable float max) {
-		System.out.println("get offers by source currency amount-> " + sourceCurrency);
-		List<Offer> offers = offerService.getAllOfferBySourceCurrencyAmount(id, sourceCurrency,min,max);
+	public ResponseEntity<?> getOffersBySourceCurrency(@PathVariable long id, @PathVariable String sourceCurrency,
+			@PathVariable float min, @PathVariable float max) {
+		System.out.println(
+				"get offers by source currency amount-> " + (float) Math.ceil(min) + " - " + (float) Math.ceil(max));
+		List<Offer> offers = offerService.getAllOfferBySourceCurrencyAmount(id, sourceCurrency, (float) Math.ceil(min),
+				(float) Math.ceil(max));
 		return new ResponseEntity<>(offers, HttpStatus.OK);
 	}
 

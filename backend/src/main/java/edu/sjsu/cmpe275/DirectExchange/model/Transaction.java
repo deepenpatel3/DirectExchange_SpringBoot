@@ -16,12 +16,12 @@ public class Transaction implements Serializable {
 	private long id;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer", "mainOffer" })
+	@JsonIgnoreProperties({ "matchingOffers", "counterOffers", "parentOffer", "holdOffer" })
 	@JoinColumn(name = "main_offer", nullable = false)
 	private Offer mainOffer;
 
 	@OneToOne
-	@JsonIgnoreProperties({ "matchingOffer", "mainOffer" })
+	@JsonIgnoreProperties({ "matchingOffers", "counterOffers", "parentOffer", "holdOffer" })
 	@JoinColumn(name = "other_offer", nullable = false)
 	private Offer otherOffer;
 
@@ -29,7 +29,7 @@ public class Transaction implements Serializable {
 	private Date transactionExpirationDate;
 
 	@Column(nullable = false)
-	private String status;
+	private String status = "pending";
 
 	@Column(nullable = false)
 	private Boolean paid = false;

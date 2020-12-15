@@ -45,7 +45,9 @@ public class OfferService {
     public List<Offer> getAllOfferBySourceCurrencyAmount(long id, String sourceCurrency, float min, float max) {
         return offerRepository.findOfferBySourceCurrencyAmount(id, sourceCurrency, min, max);
     }
-    public List<Offer> getAllOfferByDestinationCurrencyAmount(long id, String destinationCurrency, float min, float max) {
+
+    public List<Offer> getAllOfferByDestinationCurrencyAmount(long id, String destinationCurrency, float min,
+            float max) {
         return offerRepository.findOfferByDestinationCurrencyAmount(id, destinationCurrency, min, max);
     }
 

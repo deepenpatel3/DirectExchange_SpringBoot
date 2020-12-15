@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import axios from "axios";
 import Navbar from "../Reuse/Navbar";
-import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider, Tooltip } from 'antd';
+import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider, Tooltip, Rate, Table } from 'antd';
 import { Link } from "react-router-dom";
-import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, SmileTwoTone } from '@ant-design/icons';
+import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, SmileTwoTone, HeartOutlined } from '@ant-design/icons';
 const { Header, Footer, Sider, Content } = Layout;
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -23,6 +23,7 @@ export default class BrowseOffer extends Component {
             highestSourceCurrencyAmount: Number.MIN_VALUE,
             lowestDestinationCurrencyAmount: Number.MAX_VALUE,
             highestDestinationCurrencyAmount: Number.MIN_VALUE,
+            userTransactions: []
         }
     }
 
@@ -33,34 +34,47 @@ export default class BrowseOffer extends Component {
     formRef = React.createRef();
 
     getOffers = () => {
-        console.log("called");
+        console.log("get offers called");
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferExceptUser/` + localStorage.getItem("id"))
-            .then(response => {
+            .then(async response => {
                 console.log("allOffers ", response.data);
                 let allOffers = response.data;
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
-                    console.log("allOffers ", allOffers);
-                    let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
-                    console.log("lowest ", lowestSourceCurrencyAmount);
+                    await this.getTransactionsOfAUser(selectedOffer.user.id);
+                    // console.log("allOffers ", allOffers);
+                    // let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
+                    // console.log("lowest ", lowestSourceCurrencyAmount);
 
-                    console.log("first offer ", selectedOffer);
+                    // console.log("first offer ", selectedOffer);
                     this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedSourceCurrency: "", selectedDestinationCurrency: "" });
                 }
             })
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
-            .then(response => {
-                let allMyOffers = response.data.map(offer => {
-                    if (offer.acce = "open")
-                        return { label: offer.amountToRemit, value: offer.id }
+            .then(async response => {
+                let allMyOffers = [];
+                await response.data.forEach(offer => {
+                    if (offer.status === "open" && !offer.counterOfferOrNot) {
+                        allMyOffers.push({ label: `${offer.amountToRemit} @ ${offer.exchangeRate}`, value: offer.id })
+                    }
                 });
                 allMyOffers.push({ label: "None", value: "none" });
                 this.setState({
                     allMyOffers: allMyOffers
                 });
             });
-
     }
+
+    getTransactionsOfAUser = async (id) => {
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/transactionHistory/${id}`)
+            .then(response => {
+
+                this.setState({
+                    userTransactions: response.data
+                })
+            })
+    }
+
     postCounterOffer = (values) => {
         console.log("values ", values);
         if (values.holdOffer === "none") {
@@ -118,16 +132,17 @@ export default class BrowseOffer extends Component {
             this.getOffers();
         }
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrency/${localStorage.getItem("id")}/${value}`)
-            .then(response => {
+            .then(async response => {
                 // console.log("allOffers ", response.data);
                 let allOffers = response.data;
 
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
+                    await this.getTransactionsOfAUser(selectedOffer.user.id);
                     console.log("allOffers ", allOffers);
                     console.log("first offer ", selectedOffer);
-                    let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
-                    let highestSourceCurrencyAmount = this.state.highestSourceCurrencyAmount;
+                    let lowestSourceCurrencyAmount = Number.MAX_VALUE;
+                    let highestSourceCurrencyAmount = Number.MIN_VALUE;
                     allOffers.forEach(offer => {
                         if (offer.amountToRemit < lowestSourceCurrencyAmount)
                             lowestSourceCurrencyAmount = offer.amountToRemit
@@ -147,65 +162,61 @@ export default class BrowseOffer extends Component {
             this.getOffers();
         }
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrency/${localStorage.getItem("id")}/${value}`)
-            .then(response => {
+            .then(async response => {
                 // console.log("allOffers ", response.data);
                 let allOffers = response.data;
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
+                    await this.getTransactionsOfAUser(selectedOffer.user.id);
                     console.log("allOffers ", allOffers);
                     console.log("first offer ", selectedOffer);
-                    let lowestDestinationCurrencyAmount = this.state.lowestDestinationCurrencyAmount;
-                    let highestDestinationCurrencyAmount = this.state.highestDestinationCurrencyAmount;
+                    let lowestDestinationCurrencyAmount = Number.MAX_VALUE;
+                    let highestDestinationCurrencyAmount = Number.MIN_VALUE;
                     allOffers.forEach(offer => {
                         if (offer.amountToRemit * offer.exchangeRate < lowestDestinationCurrencyAmount)
                             lowestDestinationCurrencyAmount = offer.amountToRemit * offer.exchangeRate
                         if (offer.amountToRemit * offer.exchangeRate > highestDestinationCurrencyAmount)
                             highestDestinationCurrencyAmount = offer.amountToRemit * offer.exchangeRate
                     })
-                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedDestinationCurrency: value, lowestDestinationCurrencyAmount: lowestDestinationCurrencyAmount, highestDestinationCurrencyAmount: highestDestinationCurrencyAmount });
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedDestinationCurrency: value, lowestDestinationCurrencyAmount: Math.floor(lowestDestinationCurrencyAmount), highestDestinationCurrencyAmount: Math.ceil(highestDestinationCurrencyAmount) });
                 }
                 else {
                     this.setState({ allOffers: allOffers, selectedOffer: {} });
                 }
             })
     }
-    filterBySourceCurrencyAmount = (value) => {
+    filterBySourceCurrencyAmount = async (value) => {
         console.log("in filter source currency amount", value);
-        // if (value == undefined) {
-        //     this.getOffers();
-        // }
-        axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrencyAmount/${localStorage.getItem("id")}/${this.state.selectedSourceCurrency}/${value[0]}/${value[1]}`)
-            .then(response => {
-                // console.log("allOffers ", response.data);
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfSourceCurrencyAmount/${localStorage.getItem("id")}/${this.state.selectedSourceCurrency}/${value[0]}/${value[1]}`)
+            .then(async response => {
+                console.log("filtered offers ", response.data);
                 let allOffers = response.data;
-                console.log("filtered offers ", allOffers);
-                // if (allOffers.length > 0) {
-                //     let selectedOffer = allOffers[0];
-                //     console.log("allOffers ", allOffers);
-                //     console.log("first offer ", selectedOffer);
-                //     this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
-                // }
+                // console.log("filtered offers ", allOffers);
+                if (allOffers.length > 0) {
+                    let selectedOffer = allOffers[0];
+                    await this.getTransactionsOfAUser(selectedOffer.user.id);
+                    // console.log("allOffers ", allOffers);
+                    console.log("first offer ", selectedOffer);
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                }
                 // else {
                 //     this.setState({ allOffers: allOffers, selectedOffer: {} });
                 // }
             })
     }
-    filterByDestinationCurrencyAmount = (value) => {
+    filterByDestinationCurrencyAmount = async (value) => {
         console.log("in filter destination currency amount", value);
-        // if (value == undefined) {
-        //     this.getOffers();
-        // }
-        axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrencyAmount/${localStorage.getItem("id")}/ ${this.state.selectedDestinationCurrency}/${value[0]}/${value[1]}`)
-            .then(response => {
-                // console.log("allOffers ", response.data);
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfDestinationCurrencyAmount/${localStorage.getItem("id")}/${this.state.selectedDestinationCurrency}/${value[0]}/${value[1]}`)
+            .then(async response => {
+                console.log("filtered offers ", response.data);
                 let allOffers = response.data;
-                console.log("filtered offers ", allOffers);
-                // if (allOffers.length > 0) {
-                //     let selectedOffer = allOffers[0];
-                //     console.log("allOffers ", allOffers);
-                //     console.log("first offer ", selectedOffer);
-                //     this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
-                // }
+                if (allOffers.length > 0) {
+                    let selectedOffer = allOffers[0];
+                    await this.getTransactionsOfAUser(selectedOffer.user.id);
+                    // console.log("allOffers ", allOffers);
+                    console.log("first offer ", selectedOffer);
+                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer });
+                }
                 // else {
                 //     this.setState({ allOffers: allOffers, selectedOffer: {} });
                 // }
@@ -256,9 +267,28 @@ export default class BrowseOffer extends Component {
             })
     }
     render() {
-        console.log("sc ", this.state.selectedSourceCurrency, " dc ", this.state.selectedDestinationCurrency);
-        console.log("lowest sc ", this.state.lowestSourceCurrencyAmount, " highest sc amount: ", this.state.highestSourceCurrencyAmount);
-        console.log("lowest dc ", this.state.lowestDestinationCurrencyAmount, " highest dc amount: ", this.state.highestDestinationCurrencyAmount);
+        // console.log("sc ", this.state.selectedSourceCurrency, " dc ", this.state.selectedDestinationCurrency);
+        // console.log("lowest sc ", this.state.lowestSourceCurrencyAmount, " highest sc amount: ", this.state.highestSourceCurrencyAmount);
+        // console.log("lowest dc ", this.state.lowestDestinationCurrencyAmount, " highest dc amount: ", this.state.highestDestinationCurrencyAmount);
+        console.log("trans -------> ", this.state.userTransactions);
+
+        const columns = [
+            {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+            },
+            {
+                title: 'User-1',
+                key: 'user1',
+                render: (text) => (<p>{text.mainOffer.user.username}</p>)
+            },
+            {
+                title: 'User-2',
+                key: 'user2',
+                render: (text) => (<p>{text.otherOffer.user.username}</p>)
+            },
+        ]
         return (
             <div>
                 <Navbar />
@@ -367,10 +397,7 @@ export default class BrowseOffer extends Component {
                                                     datetime={
                                                         <span>{item.expirationDate}</span>
                                                     }
-                                                    onClick={
-                                                        () =>
-                                                            this.setState({ selectedOffer: item })
-                                                    }
+                                                    onClick={async () => { await this.getTransactionsOfAUser(item.user.id); this.setState({ selectedOffer: item }) }}
                                                 />
                                                 <Divider />
                                             </>
@@ -532,6 +559,11 @@ export default class BrowseOffer extends Component {
                                                     </Button>
                                                 </Form.Item>
                                             </Form>
+                                        </TabPane>
+                                        <TabPane tab="User info" key="5">
+                                            User rating:
+                                            <Rate allowHalf disabled value={Number(this.state.selectedOffer.user.reputation)} style={{ backgroundColor: "white" }} /><br /><br /><br />
+                                            <Table columns={columns} dataSource={this.state.userTransactions} pagination={{ defaultPageSize: 5 }} title={() => 'Transactions:'} />
                                         </TabPane>
                                     </Tabs>
                                 </PageHeader>

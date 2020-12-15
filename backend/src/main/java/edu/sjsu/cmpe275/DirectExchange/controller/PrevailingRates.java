@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @RestController
 @CrossOrigin(origins = "*")
 public class PrevailingRates {
-    
+
     @RequestMapping(value = "/rates", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity<?> deleteCounterOffer() {
         System.out.println("Prevailing Rates called -> ");
-        HashMap<String,Double> rates = new HashMap<String,Double>();
-        
-        rates.put("EUR", 1.20);
-        rates.put("GBP", 1.33);
-        rates.put("INR", 0.014);
-        rates.put("RMB", 0.15);
-        
+        HashMap<String, Double> rates = new HashMap<String, Double>();
+
+        rates.put("EUR", 0.824609);
+        rates.put("GBP", 0.751221);
+        rates.put("INR", 73.7554);
+        rates.put("RMB", 6.53793);
+
         return new ResponseEntity<>(rates, HttpStatus.OK);
     }
 

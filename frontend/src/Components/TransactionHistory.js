@@ -5,14 +5,36 @@ import { Table, PageHeader } from 'antd';
 
 export default class TransactionHistory extends Component {
     state = {
-        myCompletedOffers: []
+        myTransactions: []
     }
     componentDidMount() {
-        axios.get(`${process.env.REACT_APP_BACKEND_URL}/transactions/${localStorage.getItem("id")}`)
-            .then(response => {
-                console.log(response.data);
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/transactionHistory/${localStorage.getItem("id")}`)
+            .then(async response => {
+                let myTransactions = [];
+                await response.data.forEach(transaction => {
+                    let obj = {};
+                    obj.dateAndTime = new Date(transaction.transactionExpirationDate).toLocaleString();
+                    if (transaction.mainOffer.user.id === Number(localStorage.getItem("id"))) {
+                        obj.sourceCurrencyAmount = transaction.mainOffer.amountToRemit;
+                        obj.destinationCurrencyAmount = transaction.mainOffer.amountToRemit * transaction.mainOffer.exchangeRate;
+                        obj.exchangeRate = transaction.mainOffer.exchangeRate;
+                        obj.sourceCurrency = transaction.mainOffer.sourceCurrency;
+                        obj.destinationCurrency = transaction.mainOffer.destinationCurrency;
+                        obj.status = transaction.status;
+                        obj.serviceFee = (transaction.mainOffer.amountToRemit * 0.0005) + ` ${obj.sourceCurrency}`;
+                    } else {
+                        obj.status = transaction.status;
+                        obj.sourceCurrencyAmount = transaction.otherOffer.amountToRemit;
+                        obj.destinationCurrencyAmount = transaction.otherOffer.amountToRemit * transaction.otherOffer.exchangeRate;
+                        obj.exchangeRate = transaction.otherOffer.exchangeRate;
+                        obj.sourceCurrency = transaction.otherOffer.sourceCurrency;
+                        obj.destinationCurrency = transaction.otherOffer.destinationCurrency;
+                        obj.serviceFee = (transaction.otherOffer.amountToRemit * 0.0005) + ` ${obj.sourceCurrency}`;
+                    }
+                    myTransactions.push(obj);
+                });
                 this.setState({
-                    myCompletedOffers: response.data
+                    myTransactions: myTransactions
                 });
             });
     }
@@ -20,9 +42,9 @@ export default class TransactionHistory extends Component {
     render() {
         const columns = [
             {
-                title: 'Amount to Remit',
-                dataIndex: 'amountToRemit',
-                key: 'amountToRemit',
+                title: 'Date and Time',
+                dataIndex: 'dateAndTime',
+                key: 'dateAndTime',
             },
             {
                 title: 'Source Currency',
@@ -35,19 +57,29 @@ export default class TransactionHistory extends Component {
                 key: 'destinationCurrency',
             },
             {
-                title: 'Source Country',
-                dataIndex: 'sourceCountry',
-                key: 'sourceCountry',
+                title: 'Source Country Amount',
+                dataIndex: 'sourceCurrencyAmount',
+                key: 'sourceCurrencyAmount',
             },
             {
-                title: 'Destination Country',
-                dataIndex: 'destinationCountry',
-                key: 'destinationCountry',
+                title: 'Destination Country Amount',
+                dataIndex: 'destinationCurrencyAmount',
+                key: 'destinationCurrencyAmount',
             },
             {
                 title: 'Exchange Rate',
                 dataIndex: 'exchangeRate',
                 key: 'exchangeRate',
+            },
+            {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+            },
+            {
+                title: 'Service Fee',
+                dataIndex: 'serviceFee',
+                key: 'serviceFee',
             }
         ]
         return (
@@ -57,7 +89,7 @@ export default class TransactionHistory extends Component {
                     ghost={false}
                     title="Transaction History"
                 ></PageHeader>
-                <Table dataSource={this.state.myCompletedOffers} columns={columns} />
+                <Table dataSource={this.state.myTransactions} columns={columns} />
             </div>
         )
     }

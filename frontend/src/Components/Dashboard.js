@@ -4,16 +4,16 @@ import { Statistic, Card, Row, Col, Table } from 'antd';
 import axios from "axios";
 import Navbar from './Reuse/Navbar';
 const columns = [
-  {
-    title: 'Currency',
-    dataIndex: 'currency',
-    key: 'currency',
-  },
-  {
-    title: 'Value',
-    dataIndex: 'value',
-    key: 'value',
-  }
+    {
+        title: 'Currency',
+        dataIndex: 'currency',
+        key: 'currency',
+    },
+    {
+        title: 'Value',
+        dataIndex: 'value',
+        key: 'value',
+    }
 ];
 // const data = [
 //     {
@@ -36,41 +36,41 @@ const columns = [
 //   ];
 class Dashboard extends Component {
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      currency: []
-    }
-  }
-
-  async componentDidMount() {
-
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/rates`)
-      .then(response => {
-        console.log(response.data);
-        let currency = [];
-        for (let i in response.data) {
-
-          let data = {
-            currency: "1 " + i,
-            value: response.data[i] + " USD"
-          }
-          currency.push(data);
+    constructor(props) {
+        super(props);
+        this.state = {
+            currency: []
         }
-        this.setState({
-          currency: currency
-        })
-      })
-  }
-  render() {
-    return (
-      <div>
-        <Navbar />
-        <Table style={{ margin: "50px" }} columns={columns} dataSource={this.state.currency} />
-      </div>
+    }
 
-    );
-  }
+    async componentDidMount() {
+
+        axios.get(`${process.env.REACT_APP_BACKEND_URL}/rates`)
+            .then(response => {
+                console.log(response.data);
+                let currency = [];
+                for (let i in response.data) {
+
+                    let data = {
+                        currency: "1 USD",
+                        value: response.data[i] + " " + i
+                    }
+                    currency.push(data);
+                }
+                this.setState({
+                    currency: currency
+                })
+            })
+    }
+    render() {
+        return (
+            <div>
+                <Navbar />
+                <Table style={{ margin: "50px" }} columns={columns} dataSource={this.state.currency} />
+            </div>
+
+        );
+    }
 }
 
 export default Dashboard;

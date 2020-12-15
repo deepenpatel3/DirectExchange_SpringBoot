@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import {
     Form, Collapse, Row, Col, Badge, Result, Button, Divider,
-    Comment, Avatar, Checkbox, Input, Table, Descriptions, Select, DatePicker, message, Modal, Space, Tooltip
+    Comment, Avatar, Checkbox, Input, Table, Descriptions, Select, DatePicker, message, Modal, Space, Tooltip, Tag, Switch
 } from "antd";
-import { SmileTwoTone, CloseOutlined, CheckOutlined } from "@ant-design/icons";
+import { SmileTwoTone, CloseOutlined, CheckOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import Navbar from '../Reuse/Navbar';
 // import "../../../media/css/message.css";
 //import DesktoChatWindow from './ChatWindow/Desktop'
@@ -46,9 +46,13 @@ class Message extends Component {
             text: {},
             allMyOffers: [],
             countries: [],
+            currencies: [],
             currentOffer: {},
             matchingOffers: {},
             counterOfferValue: 0,
+            prevalingRatesCheckBox: true,
+            currencyRates: {},
+            showSplitMatches: true
         }
     }
 
@@ -74,19 +78,27 @@ class Message extends Component {
 
     getOffers = async () => {
         await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
-            .then(response => {
+            .then(async response => {
                 console.log(response.data);
                 this.setState({
-                    allMyOffers: response.data
+                    allMyOffers: response.data,
                 });
             });
+        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/rates`)
+            .then(response => {
+                console.log(response.data);
+                this.setState({ currencyRates: response.data })
+            })
         await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bankAccount/` + localStorage.getItem("id"))
             .then(async (response) => {
                 console.log("accounts ", response.data);
+                let currencies = await response.data.map(bankAccount => bankAccount.primaryCurrency)
                 let countries = await response.data.map(bankAccount => bankAccount.country);
                 console.log("countries ", countries);
+                console.log("currencies ", currencies);
                 this.setState({
-                    countries: countries
+                    countries: countries,
+                    currencies: currencies
                 });
             });
     }
@@ -112,12 +124,11 @@ class Message extends Component {
 
     postOffer = async (text) => {
 
-
         let data = {
             amountToRemit: text["amount"],
             sourceCurrency: text["sourceCurrency"],
             sourceCountry: text["sourceCountry"],
-            exchangeRate: text["exchangeRate"],
+            // exchangeRate: text["exchangeRate"],
             destinationCurrency: text["destinationCurrency"],
             destinationCountry: text["destinationCountry"],
             expirationDate: text["expirationDate"].format("YYYY-MM-DD"),
@@ -127,7 +138,20 @@ class Message extends Component {
                 "id": localStorage.getItem("id")
             }
         }
-        console.log(data);
+        if (this.state.prevalingRatesCheckBox) {
+            if (data.sourceCurrency === "USD")
+                data.exchangeRate = Number(this.state.currencyRates[data.destinationCurrency])
+            else if (data.destinationCurrency === "USD")
+                data.exchangeRate = 1 / Number(this.state.currencyRates[data.sourceCurrency])
+            else {
+                console.log(this.state.currencyRates[data.sourceCurrency], " -> ", this.state.currencyRates[data.destinationCurrency])
+                data.exchangeRate = Number(this.state.currencyRates[data.destinationCurrency]) / Number(this.state.currencyRates[data.sourceCurrency])
+            }
+        } else {
+            data.exchangeRate = Number(text["exchangeRate"])
+        }
+
+        console.log("data ", data);
         await axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer`, data)
             .then(response => {
                 message.success(response.data);
@@ -155,7 +179,6 @@ class Message extends Component {
     }
 
     updateOffer = async (value) => {
-        // this.setState({text : value})
         let offer = this.state.text;
         offer.amountToRemit = value["amount"]
         offer.exchangeRate = value["exchangeRate"]
@@ -192,18 +215,19 @@ class Message extends Component {
             destinationCurrency: text["sourceCurrency"],
             destinationCountry: text["sourceCountry"],
             counterOfferOrNot: true,
+            remainingBalance: this.state.counterOfferValue,
             user: {
                 "id": localStorage.getItem("id")
             }
         }
         console.log(data);
-        //offer/counterOffer/{mainOfferId}/{holdOfferId}
 
         await axios.post(`${process.env.REACT_APP_BACKEND_URL}/offer/counterOffer/${text.id}/${this.state.currentOffer.id}`, data)
             .then(response => {
                 message.success(response.data);
                 this.getOffers();
             })
+            .catch(error => { message.error(error.response.data) })
     }
 
 
@@ -227,10 +251,11 @@ class Message extends Component {
     }
 
     selectMatchingOffer = (offer) => {
+
         this.setState({
             matchingCounterOffer: offer,
             matchingCounterOfferVisible: true
-        })
+        }, () => { console.log(" matching counter offer ", this.state.matchingCounterOffer) })
     }
 
     pay = async (id) => {
@@ -339,33 +364,73 @@ class Message extends Component {
                     <Button type="primary" onClick={() => { this.acceptSplitMatchingOffer(text.offers) }} icon={<CheckOutlined />} />
                 )
             },
+            // {
+            //     title: 'Counter Offer',
+            //     key: 'counterOffer',
+            //     render: (text, record) => (
+            //         <Space size="middle">
+            //             {text.offers[0].allowCounterOffer ? <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[0]) }}>Against {text.offers[0].amountToRemit}</Button> : null}
+            //             {text.offers[1].allowCounterOffer ? <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[1]) }}>Against {text.offers[1].amountToRemit}</Button> : null}
+            //         </Space>
+            //     )
+            // }
+        ]
+
+        const oppositeMatchingOffers = [
+            {
+                title: 'Ammount to Remit',
+                dataIndex: 'amountToRemit',
+                key: 'amountToRemit',
+            },
+            {
+                title: 'Exchange rate',
+                dataIndex: 'exchangeRate',
+                key: 'exchangeRate',
+            },
+            {
+                title: 'Accept',
+                key: 'action',
+                render: (text, record) => (
+                    <Button type="primary" onClick={() => { this.acceptMatchingOffer(text.offers[0].id) }} icon={<CheckOutlined />} />
+                )
+            },
             {
                 title: 'Counter Offer',
                 key: 'counterOffer',
                 render: (text, record) => (
                     <Space size="middle">
                         <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[0]) }}>Against {text.offers[0].amountToRemit}</Button>
-                        <Button type="primary" onClick={() => { this.selectMatchingOffer(text.offers[1]) }}>Against {text.offers[1].amountToRemit}</Button>
                     </Space>
                 )
             }
         ]
+
         let exact = matchingOffers.Exact;
-        let opposite = matchingOffers.Opposite;
+        let opposite = [];
+        if (matchingOffers && matchingOffers.Opposite && matchingOffers.Opposite.length > 0) {
+            matchingOffers.Opposite.forEach(offers => {
+                let obj = {};
+                obj.amountToRemit = offers[0].amountToRemit + " " + offers[0].sourceCurrency + " - " + offers[1].amountToRemit + " " + offers[1].sourceCurrency;
+                obj.exchangeRate = offers[0].exchangeRate;
+                obj.offers = offers;
+                opposite.push(obj);
+            });
+        }
         let range = matchingOffers.Range;
         let split = [];
         if (matchingOffers && matchingOffers.Split && matchingOffers.Split.length > 0) {
             matchingOffers.Split.forEach(offers => {
                 if (offers.length == 2) {
                     let obj = {};
-                    obj.amountToRemit = offers[0].amountToRemit + "+" + offers[1].amountToRemit;
+                    obj.amountToRemit = offers[0].amountToRemit + " + " + offers[1].amountToRemit;
                     obj.exchangeRate = offers[0].exchangeRate;
                     obj.offers = offers;
                     split.push(obj);
                 }
             });
         }
-
+        // console.log(" ", this.state.matchingCounterOffer);
+        // console.log("refereceOffers ", this.state.referenceOffers);
         return (
             <div >
                 <Navbar selectedKey="profile:1" />
@@ -421,9 +486,7 @@ class Message extends Component {
                                                     this.changeConversation(index)
                                             }
                                         />
-
                                         <Divider />
-
                                     </>
                                 )
                             })}
@@ -439,8 +502,8 @@ class Message extends Component {
                                     <div style={{ float: "right" }}>
                                         <Space direction="horizontal">
                                             {currentOffer.status == "inTransaction" && !currentOffer.sent && <Button type="success" onClick={() => { this.pay(currentOffer.id) }}> Pay </Button>}
-                                            <Button type="primary" onClick={() => { this.update(currentOffer) }}> Edit </Button>
-                                            <Button type="danger" onClick={() => { this.deleteOffer(currentOffer) }} > Delete </Button>
+                                            {currentOffer.counterOfferOrNot || currentOffer.status !== "open" ? null : <><Button type="primary" onClick={() => { this.update(currentOffer) }}> Edit </Button> <Button type="danger" onClick={() => { this.deleteOffer(currentOffer) }} > Delete </Button></>}
+
                                         </Space>
                                     </div>
                                     <div className="friend-drawer no-gutters friend-drawer--black" style={{ textAlign: "center" }}>
@@ -449,6 +512,7 @@ class Message extends Component {
                                             icon={currentOffer.sourceCurrency}
                                         />
                                         <span className="ant-comment-content-author-name--white">{currentOffer.amountToRemit + " @ " + currentOffer.exchangeRate}</span>
+                                        {currentOffer.counterOfferOrNot ? <Tag style={{ marginLeft: "50px" }} color="#2db7f5" icon={<ClockCircleOutlined />} ><span style={{ height: "30px", fontSize: "15px" }}>Counter Offer</span></Tag> : null}
 
                                     </div>
                                 </div>
@@ -458,6 +522,7 @@ class Message extends Component {
 
                                             <Descriptions title="Offer details" bordered>
                                                 <Descriptions.Item label="Ammount to Remit">{currentOffer.amountToRemit}</Descriptions.Item>
+                                                <Descriptions.Item label="Remaining Balanceß">{currentOffer.remainingBalance}</Descriptions.Item>
                                                 <Descriptions.Item label="Source Currency">{currentOffer.sourceCurrency}</Descriptions.Item>
                                                 <Descriptions.Item label="Source Country">{currentOffer.sourceCountry}</Descriptions.Item>
                                                 <Descriptions.Item label="Destination Currency">{currentOffer.destinationCurrency}</Descriptions.Item>
@@ -467,20 +532,22 @@ class Message extends Component {
                                                 <Descriptions.Item label="Expiration Date">
                                                     {currentOffer.expirationDate}
                                                 </Descriptions.Item>
-                                                <Descriptions.Item label="Status" span={2}>
-                                                    {/* <Badge status={currentOffer.accepted ? "success" : "processing"} text={currentOffer.accepted ? "Accepted" : "Pending"} /> */}
+                                                <Descriptions.Item label="Status" >
                                                     {currentOffer.status}
                                                 </Descriptions.Item>
-                                                {/* <Descriptions.Item label="Remaining amount">
-                                                    {currentOffer.remainingBalance}
-                                                </Descriptions.Item> */}
+                                                <Descriptions.Item label="Counter Offer">
+                                                    <Badge status={currentOffer.allowCounterOffer ? "success" : "error"} text={currentOffer.allowCounterOffer ? "Allowed" : "Not Allowed"} />
+                                                </Descriptions.Item>
+                                                <Descriptions.Item label="Split Exchange">
+                                                    <Badge status={currentOffer.allowSplitExchange ? "success" : "error"} text={currentOffer.allowSplitExchange ? "Allowed" : "Not Allowed"} />
+                                                </Descriptions.Item>
                                                 <Descriptions.Item label="Exchange rate">{currentOffer.exchangeRate}</Descriptions.Item>
                                             </Descriptions>
                                             <br />
-                                            <span className="ant-descriptions-title">Counter offers </span>
-                                            <Table columns={columns} dataSource={currentOffer.counterOffers} pagination={{ defaultPageSize: 5 }} />
-                                            <span className="ant-descriptions-title">Matching offers </span>
-                                            <Button onClick={() => this.getMatchingOffers(currentOffer.id)}>Fetch Matching offers</Button>
+                                            {currentOffer.counterOfferOrNot ? null : <><span className="ant-descriptions-title">Counter offers </span> <Table columns={columns} dataSource={currentOffer.counterOffers} pagination={{ defaultPageSize: 5 }} /></>}
+
+
+                                            {currentOffer.counterOfferOrNot || currentOffer.status !== "open" ? null : <><span className="ant-descriptions-title">Matching offers </span><Button onClick={() => this.getMatchingOffers(currentOffer.id)}>Fetch Matching offers</Button> <span style={{ float: "right" }}>Split Matches<Switch defaultChecked={this.state.showSplitMatches} checkedChildren="Show" unCheckedChildren="Hide" onChange={() => { this.setState({ showSplitMatches: !this.state.showSplitMatches }) }} /></span></>}
                                             {exact && exact.length > 0 && <>
                                                 <br />
                                                 <span className="ant-descriptions-title">Exact</span>
@@ -493,10 +560,16 @@ class Message extends Component {
                                                 <Table columns={singleMathingOffers} dataSource={range} pagination={{ defaultPageSize: 5 }} />
                                             </>}
 
-                                            {split && split.length > 0 && <>
+                                            {this.state.showSplitMatches && split && split.length > 0 && <>
                                                 <br />
-                                                <span className="ant-descriptions-title">Split Offers</span>
+                                                <span className="ant-descriptions-title">Split Offers(A = B + C)</span>
                                                 <Table columns={splitMatchingOffers} dataSource={split} pagination={{ defaultPageSize: 5 }} />
+                                            </>}
+
+                                            {this.state.showSplitMatches && opposite && opposite.length > 0 && <>
+                                                <br />
+                                                <span className="ant-descriptions-title">Split Offers( A = C - B)</span>
+                                                <Table columns={oppositeMatchingOffers} dataSource={opposite} pagination={{ defaultPageSize: 5 }} />
                                             </>}
                                         </div>
                                     </div>
@@ -528,11 +601,7 @@ class Message extends Component {
                             splitOffers: true,
                             counterOffers: true
                         }}
-                        onFinish={this.postOffer}
-                    // onFinishFailed={this.onFinishFailed}
-                    // style={{ display: this.state.add }}
-
-                    >
+                        onFinish={this.postOffer}>
                         <Form.Item
                             label="Amount to Remit"
                             name="amount"
@@ -545,6 +614,7 @@ class Message extends Component {
                         >
                             <Input />
                         </Form.Item>
+
                         <Form.Item
                             label="Source Currency"
                             name="sourceCurrency"
@@ -555,15 +625,8 @@ class Message extends Component {
                                 },
                             ]}
                         >
-                            <Select
-                                style={{ width: "150px" }}
-                                placeholder="Select the source currency"
-                            >
-                                <Option key="USD" value="USD">USD</Option>
-                                <Option key="EUR" value="EUR">EUR</Option>
-                                <Option key="INR" value="INR">INR</Option>
-                                <Option key="GBP" value="GBP">GBP</Option>
-                                <Option key="RMB" value="RMB">RMB</Option>
+                            <Select style={{ width: "150px" }}>
+                                {this.state.currencies.map(currency => <option value={currency}>{currency}</option>)}
                             </Select>
                         </Form.Item>
 
@@ -577,30 +640,33 @@ class Message extends Component {
                                 },
                             ]}
                         >
-                            <Select
-                                style={{ width: "150px" }}
-                                placeholder="Select the destination currency"
-                            >
-                                <Option key="USD" value="USD">USD</Option>
-                                <Option key="EUR" value="EUR">EUR</Option>
-                                <Option key="INR" value="INR">INR</Option>
-                                <Option key="GBP" value="GBP">GBP</Option>
-                                <Option key="RMB" value="RMB">RMB</Option>
+                            <Select style={{ width: "150px" }}>
+                                {this.state.currencies.map(currency => <option value={currency}>{currency}</option>)}
                             </Select>
                         </Form.Item>
 
                         <Form.Item
                             label="Exchange Rate"
-                            name="exchangeRate"
                             rules={[
                                 {
-                                    required: true,
-                                    message: 'Exchange Rate!',
+                                    required: true
                                 },
-                            ]}
-                        >
-                            <Input />
+                            ]}>
+                            <Checkbox checked={this.state.prevalingRatesCheckBox} onChange={() => { this.setState({ prevalingRatesCheckBox: !this.state.prevalingRatesCheckBox }) }}>Prevailing rate</Checkbox>
                         </Form.Item>
+
+                        {!this.state.prevalingRatesCheckBox ?
+                            <Form.Item
+                                label="Custom rate"
+                                name="exchangeRate"
+                                rules={[
+                                    {
+                                        message: 'Exchange Rate!',
+                                    },
+                                ]}
+                            >
+                                <Input />
+                            </Form.Item> : null}
 
                         <Form.Item
                             label="Source Country"
@@ -676,9 +742,6 @@ class Message extends Component {
 
                         }}
                         onFinish={this.updateOffer}
-
-
-
                     >
                         <Form.Item
                             label="Amount to Remit"
@@ -729,13 +792,8 @@ class Message extends Component {
                             expirationDate: this.state.text['expirationDate'],
                             splitOffers: this.state.text['allowSplitExchange'],
                             counterOffers: this.state.text['allowCounterOffer'],
-
                         }}
-                        onFinish={this.updateOffer}
-
-
-
-                    >
+                        onFinish={this.updateOffer}>
                         <Form.Item
                             label="Amount to Remit"
                             name="amount"
@@ -762,7 +820,6 @@ class Message extends Component {
                             <Input />
                         </Form.Item>
 
-
                         <Form.Item
                             label="Expiration Date"
                             name="expirationDate"
@@ -785,7 +842,7 @@ class Message extends Component {
                     </Form>
                 </Modal>
                 <Modal
-                    title="Post Counter offers"
+                    title="Post Counter offers (in original offer's source currency)"
                     visible={this.state.matchingCounterOfferVisible}
                     onCancel={async () => await this.setState({ matchingCounterOfferVisible: false, text: {} })}
                     onOk={() => this.postMatchingCounterOffer()}

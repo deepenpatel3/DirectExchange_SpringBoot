@@ -10,7 +10,7 @@ export const AllowedRoutes = ({ component: RouteComponent, ...rest }) => {
             render={props => {
                 let user = getloggedInUser();
                 let numberOfBankAccounts = numOfBankAccounts();
-                console.log("user ", user, " num ", numberOfBankAccounts);
+                // console.log("user ", user, " num ", numberOfBankAccounts);
                 if (user && numberOfBankAccounts > 1) {
                     return <RouteComponent {...props} />;
                 } else {
