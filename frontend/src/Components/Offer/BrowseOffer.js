@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from "axios";
 import Navbar from "../Reuse/Navbar";
+import ReactPaginate from 'react-paginate';
 import { Card, Col, Row, Layout, List, Tabs, Descriptions, Form, Input, Button, message, Select, Checkbox, Comment, PageHeader, Avatar, Result, Divider, Slider, Tooltip, Rate, Table } from 'antd';
 import { Link } from "react-router-dom";
 import { ContainerFilled, ArrowRightOutlined, CheckOutlined, CloseOutlined, SmileTwoTone, HeartOutlined } from '@ant-design/icons';
@@ -14,6 +15,7 @@ export default class BrowseOffer extends Component {
         super(props);
         this.state = {
             allOffers: [],
+            currentPageOffers : [],
             selectedOffer: {},
             allMyOffers: [],
             holdOfferId: Number(),
@@ -23,7 +25,10 @@ export default class BrowseOffer extends Component {
             highestSourceCurrencyAmount: Number.MIN_VALUE,
             lowestDestinationCurrencyAmount: Number.MAX_VALUE,
             highestDestinationCurrencyAmount: Number.MIN_VALUE,
-            userTransactions: []
+            userTransactions: [],
+            offset: 0,
+            perPage: 5,
+            currentPage: 0
         }
     }
 
@@ -41,13 +46,14 @@ export default class BrowseOffer extends Component {
                 let allOffers = response.data;
                 if (allOffers.length > 0) {
                     let selectedOffer = allOffers[0];
+                    let currentPageOffers = allOffers.slice(this.state.offset, this.state.offset + this.state.perPage)
                     await this.getTransactionsOfAUser(selectedOffer.user.id);
                     // console.log("allOffers ", allOffers);
                     // let lowestSourceCurrencyAmount = this.state.lowestSourceCurrencyAmount;
                     // console.log("lowest ", lowestSourceCurrencyAmount);
 
                     // console.log("first offer ", selectedOffer);
-                    this.setState({ allOffers: allOffers, selectedOffer: selectedOffer, selectedSourceCurrency: "", selectedDestinationCurrency: "" });
+                    this.setState({ allOffers: allOffers, currentPageOffers, pageCount: Math.ceil(allOffers.length / this.state.perPage), selectedOffer: selectedOffer, selectedSourceCurrency: "", selectedDestinationCurrency: "" });
                 }
             })
         axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
@@ -266,6 +272,17 @@ export default class BrowseOffer extends Component {
                 message.success(response.data);
             })
     }
+    handlePageClick = (e) => {
+        const selectedPage = e.selected;
+        const offset = selectedPage * this.state.perPage;
+        let currentPageOffers = this.state.allOffers.slice(offset, offset + this.state.perPage)
+        this.setState({
+            currentPage: selectedPage,
+            offset,
+            currentPageOffers
+        });
+
+    };
     render() {
         // console.log("sc ", this.state.selectedSourceCurrency, " dc ", this.state.selectedDestinationCurrency);
         // console.log("lowest sc ", this.state.lowestSourceCurrencyAmount, " highest sc amount: ", this.state.highestSourceCurrencyAmount);
@@ -377,7 +394,9 @@ export default class BrowseOffer extends Component {
                                         renderItem={item => (
                                             <List.Item> */}
                                     {this.state.allOffers.length > 0 ?
-                                        this.state.allOffers.map(item =>
+                                        (
+                                            <>
+                                            {this.state.currentPageOffers.map(item =>
                                             <>
                                                 <Comment
                                                     className={"friend-drawer friend-drawer--onhover " + item.className}
@@ -401,6 +420,20 @@ export default class BrowseOffer extends Component {
                                                 />
                                                 <Divider />
                                             </>
+                                        )}
+                                        <ReactPaginate
+                                            previousLabel={"prev"}
+                                            nextLabel={"next"}
+                                            breakLabel={"..."}
+                                            breakClassName={"break-me"}
+                                            pageCount={this.state.pageCount}
+                                            marginPagesDisplayed={2}
+                                            pageRangeDisplayed={5}
+                                            onPageChange={this.handlePageClick}
+                                            containerClassName={"pagination"}
+                                            subContainerClassName={"pages pagination"}
+                                            activeClassName={"active"}/>
+                                        </>
                                         )
                                         :
                                         <Result

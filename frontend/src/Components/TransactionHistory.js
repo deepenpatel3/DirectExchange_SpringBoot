@@ -89,7 +89,7 @@ export default class TransactionHistory extends Component {
                     ghost={false}
                     title="Transaction History"
                 ></PageHeader>
-                <Table dataSource={this.state.myTransactions} columns={columns} />
+                <Table dataSource={this.state.myTransactions} columns={columns} pagination={{ defaultPageSize: 10 }} />
             </div>
         )
     }

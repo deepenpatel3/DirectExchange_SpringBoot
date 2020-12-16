@@ -9,6 +9,8 @@ import Navbar from '../Reuse/Navbar';
 //import DesktoChatWindow from './ChatWindow/Desktop'
 import axios from "axios";
 import MyOffers from "./MyOffers";
+import ReactPaginate from 'react-paginate';
+
 const { Search } = Input;
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -52,7 +54,11 @@ class Message extends Component {
             counterOfferValue: 0,
             prevalingRatesCheckBox: true,
             currencyRates: {},
-            showSplitMatches: true
+            showSplitMatches: true,
+            offset: 0,
+            perPage: 5,
+            currentPage: 0,
+            currentPageOffers : [],
         }
     }
 
@@ -79,9 +85,12 @@ class Message extends Component {
     getOffers = async () => {
         await axios.get(`${process.env.REACT_APP_BACKEND_URL}/getAllOfferOfUser/` + localStorage.getItem("id"))
             .then(async response => {
-                console.log(response.data);
+                let currentPageOffers = response.data.slice(this.state.offset, this.state.offset + this.state.perPage)
+                    
                 this.setState({
                     allMyOffers: response.data,
+                    currentPageOffers,
+                     pageCount: Math.ceil(response.data.length / this.state.perPage)
                 });
             });
         await axios.get(`${process.env.REACT_APP_BACKEND_URL}/rates`)
@@ -274,6 +283,19 @@ class Message extends Component {
             message.error(e.message);
         }
     }
+
+    handlePageClick = (e) => {
+        const selectedPage = e.selected;
+        const offset = selectedPage * this.state.perPage;
+        let currentPageOffers = this.state.allMyOffers.slice(offset, offset + this.state.perPage)
+        this.setState({
+            currentPage: selectedPage,
+            offset,
+            currentPageOffers
+        });
+
+    };
+
     render() {
         const { currentOffer, matchingOffers } = this.state;
         const columns = [
@@ -460,7 +482,7 @@ class Message extends Component {
 
                         </div>
                         <div className="people-list">
-                            {this.state.allMyOffers.map((offer, index) => {
+                            {this.state.currentPageOffers.map((offer, index) => {
                                 return (
                                     <>
                                         <Comment
@@ -490,6 +512,18 @@ class Message extends Component {
                                     </>
                                 )
                             })}
+                             <ReactPaginate
+                                            previousLabel={"prev"}
+                                            nextLabel={"next"}
+                                            breakLabel={"..."}
+                                            breakClassName={"break-me"}
+                                            pageCount={this.state.pageCount}
+                                            marginPagesDisplayed={2}
+                                            pageRangeDisplayed={5}
+                                            onPageChange={this.handlePageClick}
+                                            containerClassName={"pagination"}
+                                            subContainerClassName={"pages pagination"}
+                                            activeClassName={"active"}/>
                         </div>
                     </Col>
                     <Col
