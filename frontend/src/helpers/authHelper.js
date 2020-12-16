@@ -19,6 +19,7 @@ export const login = (user) => {
     localStorage.setItem("nickname", user.nickname);
     localStorage.setItem("username", user.username);
     localStorage.setItem("displayName", user.displayName);
+    localStorage.setItem("numOfAccounts", user.bankAccounts.length);
 }
 
 export const getloggedInUser = () => {

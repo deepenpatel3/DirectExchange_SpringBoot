@@ -31,7 +31,7 @@ class Login extends Component {
         // We will display Google and Facebook as auth providers.
         signInOptions: [
             firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-            firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+            // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
             firebase.auth.EmailAuthProvider.PROVIDER_ID
         ],
         callbacks: {
@@ -56,7 +56,7 @@ class Login extends Component {
             let user = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user/uid/${firebase.auth().currentUser.uid}`);
 
             if (user.data.verified) {
-                user.data.displayName = firebase.auth().currentUser.displayName ;
+                user.data.displayName = firebase.auth().currentUser.displayName;
                 login(user.data);
                 window.location.href = 'home'
             }
